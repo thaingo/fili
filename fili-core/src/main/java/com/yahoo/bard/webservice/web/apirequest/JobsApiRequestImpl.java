@@ -142,4 +142,8 @@ public class JobsApiRequestImpl extends ApiRequestImpl implements JobsApiRequest
             throw new JobRequestFailedException(msg);
         }
     }
+
+    public PaginationHelper getPaginationHelper() {
+        return paginationHelper;
+    }
 }

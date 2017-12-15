@@ -102,6 +102,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
     private static final MetricRegistry REGISTRY = MetricRegistryFactory.getRegistry();
 
     private final ResourceDictionaries resourceDictionaries;
+    private final DataApiRequestFactory apiRequestFactory;
     private final DruidQueryBuilder druidQueryBuilder;
     private final TemplateDruidQueryMerger templateDruidQueryMerger;
     private final DruidResponseParser druidResponseParser;
@@ -136,6 +137,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
      * Constructor.
      *
      * @param resourceDictionaries  Dictionary holder
+     * @param apiRequestFactory  A factory to build apiRequests
      * @param druidQueryBuilder  A builder for converting API Requests into Druid Queries
      * @param templateDruidQueryMerger  A helper to merge TemplateDruidQueries together
      * @param druidResponseParser  Parses Druid responses
@@ -160,6 +162,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
     @Inject
     public DataServlet(
             ResourceDictionaries resourceDictionaries,
+            DataApiRequestFactory apiRequestFactory,
             DruidQueryBuilder druidQueryBuilder,
             TemplateDruidQueryMerger templateDruidQueryMerger,
             DruidResponseParser druidResponseParser,
@@ -180,6 +183,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
             DataExceptionHandler exceptionHandler
     ) {
         this.resourceDictionaries = resourceDictionaries;
+        this.apiRequestFactory = apiRequestFactory;
         this.druidQueryBuilder = druidQueryBuilder;
         this.templateDruidQueryMerger = templateDruidQueryMerger;
         this.druidResponseParser = druidResponseParser;
@@ -377,7 +381,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
         DataApiRequest apiRequest = null;
         try {
             try (TimedPhase timer = RequestLog.startTiming("DataApiRequest")) {
-                apiRequest = dataApiRequestFactory.buildApiRequest(
+                apiRequest = dataApiRequestFactory.buildDataApiRequestRequest(
                         tableName,
                         timeGrain,
                         dimensions,
@@ -393,7 +397,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
                         asyncAfter,
                         perPage,
                         page,
-                        uriInfo,
+                        containerRequestContext,
                         this
                 );
             }
@@ -442,7 +446,7 @@ public class DataServlet extends CORSPreflightServlet implements BardConfigResou
 
             try (TimedPhase timer = RequestLog.startTiming("logRequestMetrics")) {
                 logRequestMetrics(apiRequest, readCache, druidQuery);
-                RequestLog.record(new DruidFilterInfo(apiRequest.getDruidFilter()));
+                RequestLog.record(new DruidFilterInfo(druidQuery.getFilter()));
             }
 
             // Process the request

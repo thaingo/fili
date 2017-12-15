@@ -54,7 +54,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -181,11 +180,8 @@ public class JobsServlet extends EndpointServlet {
             JobsApiRequestImpl jobsApiRequest = apiRequest;
 
             Function<Collection<Map<String, String>>, AllPagesPagination<Map<String, String>>> paginationFactory =
-                    jobsApiRequest.getAllPagesPaginationFactory(
+                    jobsApiRequest.getPaginationHelper().getAllPagesPaginationFactory(
                             jobsApiRequest.getPaginationParameters()
-                                    .orElse(
-                                            jobsApiRequest.getDefaultPagination()
-                                    )
                     );
 
             observableResponse = apiRequest.getJobViews().toList()
@@ -501,7 +497,7 @@ public class JobsServlet extends EndpointServlet {
     protected Observable<PreResponse> handlePreResponseWithError(
             PreResponse preResponse,
             UriInfo uriInfo,
-            Optional<PaginationParameters> paginationParameters
+            PaginationParameters paginationParameters
     ) {
         ResponseContext responseContext = preResponse.getResponseContext();
 
@@ -517,14 +513,13 @@ public class JobsServlet extends EndpointServlet {
             return Observable.error(responseException);
         }
 
-        return paginationParameters
-                .map(pageParams -> new AllPagesPagination<>(preResponse.getResultSet(), pageParams))
-                .map(page -> new PreResponse(
-                        new ResultSet(preResponse.getResultSet().getSchema(), page.getPageOfData()),
-                        addPaginationInfoToResponseContext(responseContext, uriInfo, page)
-                ))
-                .map(Observable::just)
-                .orElse(Observable.just(preResponse));
+        Pagination<Result> pagination = new AllPagesPagination<>(preResponse.getResultSet(), paginationParameters);
+        ResultSet pagedResultSet = new ResultSet(preResponse.getResultSet().getSchema(), pagination.getPageOfData());
+
+        return Observable.just(new PreResponse(
+                pagedResultSet,
+                addPaginationInfoToResponseContext(responseContext, uriInfo, pagination)
+        ));
     }
 
     /**

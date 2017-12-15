@@ -2,33 +2,19 @@
 // Licensed under the terms of the Apache license. Please see LICENSE.md file distributed with this work for terms.
 package com.yahoo.bard.webservice.web.apirequest;
 
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.DATE_TIME_SORT_VALUE_INVALID;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.DIMENSION_FIELDS_UNDEFINED;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.INCORRECT_METRIC_FILTER_FORMAT;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.INTEGER_INVALID;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.INVALID_METRIC_FILTER_CONDITION;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.METRICS_MISSING;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.NON_AGGREGATABLE_INVALID;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_DIRECTION_INVALID;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_NOT_IN_QUERY_FORMAT;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_NOT_SORTABLE_FORMAT;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_UNDEFINED;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TABLE_UNDEFINED;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TOP_N_UNSORTED;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.UNSUPPORTED_FILTERED_METRIC_CATEGORY;
 
-import com.yahoo.bard.webservice.config.BardFeatureFlag;
 import com.yahoo.bard.webservice.data.DruidHavingBuilder;
 import com.yahoo.bard.webservice.data.dimension.Dimension;
 import com.yahoo.bard.webservice.data.dimension.DimensionDictionary;
 import com.yahoo.bard.webservice.data.dimension.DimensionField;
-import com.yahoo.bard.webservice.data.dimension.DimensionRowNotFoundException;
 import com.yahoo.bard.webservice.data.filterbuilders.DruidFilterBuilder;
 import com.yahoo.bard.webservice.data.metric.LogicalMetric;
 import com.yahoo.bard.webservice.data.metric.MetricDictionary;
 import com.yahoo.bard.webservice.data.time.GranularityParser;
 import com.yahoo.bard.webservice.data.time.TimeGrain;
-import com.yahoo.bard.webservice.druid.model.filter.Filter;
 import com.yahoo.bard.webservice.druid.model.having.Having;
 import com.yahoo.bard.webservice.druid.model.orderby.OrderByColumn;
 import com.yahoo.bard.webservice.druid.model.orderby.SortDirection;
@@ -47,15 +33,16 @@ import com.yahoo.bard.webservice.web.ApiHaving;
 import com.yahoo.bard.webservice.web.BadApiRequestException;
 import com.yahoo.bard.webservice.web.DimensionFieldSpecifierKeywords;
 import com.yahoo.bard.webservice.web.ErrorMessageFormat;
-import com.yahoo.bard.webservice.web.FilterOperation;
 import com.yahoo.bard.webservice.web.MetricParser;
+import com.yahoo.bard.webservice.table.LogicalTable;
+import com.yahoo.bard.webservice.table.LogicalTableDictionary;
+import com.yahoo.bard.webservice.table.TableIdentifier;
+import com.yahoo.bard.webservice.web.ApiHaving;
+import com.yahoo.bard.webservice.web.BadApiRequestException;
 import com.yahoo.bard.webservice.web.ResponseFormatType;
 import com.yahoo.bard.webservice.web.filters.ApiFilters;
 import com.yahoo.bard.webservice.web.util.BardConfigResources;
 import com.yahoo.bard.webservice.web.util.PaginationParameters;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -65,20 +52,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -105,9 +89,9 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
 
     private final DateTimeZone timeZone;
 
-    private final DruidFilterBuilder filterBuilder;
-
     private final HavingGenerator havingApiGenerator;
+
+    private final DruidFilterBuilder filterBuilder;
 
     private final Optional<OrderByColumn> dateTimeSort;
 
@@ -141,7 +125,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      * must be a positive integer. If not present, must be the empty string.
      * @param page  desired page of results. If present in the original request, must be a positive
      * integer. If not present, must be the empty string.
-     * @param uriInfo  The URI of the request object.
+     * @param containerRequest  The container request
      * @param bardConfigResources  The configuration resources used to build this api request
      *
      * @throws BadApiRequestException in the following scenarios:
@@ -174,7 +158,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             String asyncAfter,
             @NotNull String perPage,
             @NotNull String page,
-            UriInfo uriInfo,
+            ContainerRequestContext containerRequest,
             BardConfigResources bardConfigResources
     ) throws BadApiRequestException {
         this(
@@ -193,7 +177,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
                 asyncAfter,
                 perPage,
                 page,
-                uriInfo,
+                containerRequest,
                 bardConfigResources.getDimensionDictionary(),
                 bardConfigResources.getMetricDictionary().getScope(Collections.singletonList(tableName)),
                 bardConfigResources.getLogicalTableDictionary(),
@@ -232,7 +216,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      * must be a positive integer. If not present, must be the empty string.
      * @param page  desired page of results. If present in the original request, must be a positive
      * integer. If not present, must be the empty string.
-     * @param uriInfo  The URI of the request object.
+     * @param containerRequest  The container request
      * @param dimensionDictionary  The dimension dictionary for binding dimensions
      * @param metricDictionary The metric dictionary for binding metrics
      * @param logicalTableDictionary The table dictionary for binding logical tables
@@ -271,7 +255,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             String asyncAfter,
             @NotNull String perPage,
             @NotNull String page,
-            UriInfo uriInfo,
+            ContainerRequestContext containerRequest,
             DimensionDictionary dimensionDictionary,
             MetricDictionary metricDictionary,
             LogicalTableDictionary logicalTableDictionary,
@@ -280,9 +264,9 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             DruidFilterBuilder druidFilterBuilder,
             HavingGenerator havingGenerator
     ) throws BadApiRequestException {
-        super(format, asyncAfter, perPage, page, uriInfo);
+        super(format, asyncAfter, perPage, page, containerRequest.getUriInfo());
 
-        timeZone = generateTimeZone(timeZoneId, systemTimeZone);
+        timeZone = DateAndTimeGenerators.generateTimeZone(timeZoneId, systemTimeZone);
 
         // Time grain must be from allowed interval keywords
         this.granularity = generateGranularity(granularity, timeZone, granularityParser);
@@ -295,40 +279,27 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             LOG.debug(TABLE_UNDEFINED.logFormat(tableName));
             throw new BadApiRequestException(TABLE_UNDEFINED.format(tableName));
         }
-        DateTimeFormatter dateTimeFormatter = generateDateTimeFormatter(timeZone);
 
-        if (BardFeatureFlag.CURRENT_MACRO_USES_LATEST.isOn()) {
-            SimplifiedIntervalList availability =  TableUtils.logicalTableAvailability(getTable());
-            DateTime adjustedNow = new DateTime();
-            if (! availability.isEmpty()) {
-                DateTime firstUnavailable =  availability.getLast().getEnd();
-                if (firstUnavailable.isBeforeNow()) {
-                    adjustedNow = firstUnavailable;
-                }
-            }
-            this.intervals = generateIntervals(adjustedNow, intervals, this.granularity, dateTimeFormatter);
-        } else {
-            this.intervals = generateIntervals(intervals, this.granularity, dateTimeFormatter);
-        }
+        DateTimeFormatter dateTimeFormatter = DateAndTimeGenerators.generateDateTimeFormatter(timeZone);
 
-        this.filterBuilder = druidFilterBuilder;
+        this.intervals = DateAndTimeGenerators.generateIntervals(intervals, this.granularity, dateTimeFormatter);
 
         this.havingApiGenerator = havingGenerator;
 
         // At least one logical metric is required
         this.logicalMetrics = generateLogicalMetrics(logicalMetrics, metricDictionary, dimensionDictionary, table);
-        validateMetrics(this.logicalMetrics, this.table);
+        ApiRequestValidators.validateMetrics(this.logicalMetrics, this.table);
 
         // Zero or more grouping dimensions may be specified
         this.dimensions = generateDimensions(dimensions, dimensionDictionary);
-        validateRequestDimensions(this.dimensions, this.table);
+        ApiRequestValidators.validateRequestDimensions(this.dimensions, this.table);
 
         // Map of dimension to its fields specified using show clause (matrix params)
         this.perDimensionFields = generateDimensionFields(dimensions, dimensionDictionary);
 
         // Zero or more filtering dimensions may be referenced
         this.apiFilters = generateFilters(apiFilters, table, dimensionDictionary);
-        validateRequestDimensions(this.apiFilters.keySet(), this.table);
+        ApiRequestValidators.validateRequestDimensions(this.apiFilters.keySet(), this.table);
 
         // Zero or more having queries may be referenced
         this.havings = havingApiGenerator.apply(havings, this.logicalMetrics);
@@ -368,6 +339,8 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             throw new BadApiRequestException(TOP_N_UNSORTED.format(topN));
         }
 
+        this.filterBuilder = druidFilterBuilder;
+
         LOG.debug(
                 "Api request: TimeGrain: {}," +
                         " Table: {}," +
@@ -394,11 +367,11 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
                 this.topN,
                 this.asyncAfter,
                 this.format,
-                this.paginationParameters
+                this.paginationHelper.getPaginationParameters()
         );
 
-        validateAggregatability(this.dimensions, this.apiFilters);
-        validateTimeAlignment(this.granularity, this.intervals);
+        ApiRequestValidators.validateAggregatability(this.dimensions, this.apiFilters);
+        ApiRequestValidators.validateTimeAlignment(this.granularity, this.intervals);
     }
 
     /**
@@ -422,13 +395,13 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      * @param topN  Count of per-bucket limit (TopN) for the request
      * @param asyncAfter  How long in milliseconds the user is willing to wait for a synchronous response
      * @param timeZone  TimeZone for the request
-     * @param filterBuilder  A builder to use when building filters for the request
      * @param havingApiGenerator  A generator to generate havings map for the request
      * @param dateTimeSort  A dateTime sort column with its direction
+     * @param filterBuilder A function to build druid filters
      */
     protected DataApiRequestImpl(
             ResponseFormatType format,
-            Optional<PaginationParameters> paginationParameters,
+            PaginationParameters paginationParameters,
             UriInfo uriInfo,
             Response.ResponseBuilder builder,
             LogicalTable table,
@@ -445,9 +418,9 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             int topN,
             long asyncAfter,
             DateTimeZone timeZone,
-            DruidFilterBuilder filterBuilder,
             HavingGenerator havingApiGenerator,
-            Optional<OrderByColumn> dateTimeSort
+            Optional<OrderByColumn> dateTimeSort,
+            DruidFilterBuilder filterBuilder
     ) {
         super(format, asyncAfter, paginationParameters, uriInfo, builder);
         this.table = table;
@@ -463,9 +436,9 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
         this.count = count;
         this.topN = topN;
         this.timeZone = timeZone;
-        this.filterBuilder = filterBuilder;
         this.havingApiGenerator = havingApiGenerator;
         this.dateTimeSort = dateTimeSort;
+        this.filterBuilder = filterBuilder;
     }
 
     /**
@@ -508,17 +481,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      * @return Instance of OrderByColumn for dateTime
      */
     protected Optional<OrderByColumn> generateDateTimeSortColumn(LinkedHashMap<String, SortDirection> sortColumns) {
-
-        if (sortColumns != null && sortColumns.containsKey(DATE_TIME_STRING)) {
-            if (!isDateTimeFirstSortField(sortColumns)) {
-                LOG.debug(DATE_TIME_SORT_VALUE_INVALID.logFormat());
-                throw new BadApiRequestException(DATE_TIME_SORT_VALUE_INVALID.format());
-            } else {
-                return Optional.of(new OrderByColumn(DATE_TIME_STRING, sortColumns.get(DATE_TIME_STRING)));
-            }
-        } else {
-            return Optional.empty();
-        }
+        return DefaultSortColumnGenerators.generateDateTimeSortColumn(sortColumns);
     }
 
     /**
@@ -529,15 +492,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      * @return LinkedHashMap of columns and their direction. Using LinkedHashMap to preserve the order
      */
     protected LinkedHashMap<String, SortDirection> generateSortColumns(String sorts) {
-        LinkedHashMap<String, SortDirection> sortDirectionMap = new LinkedHashMap();
-
-        if (sorts != null && !sorts.isEmpty()) {
-            Arrays.stream(sorts.split(","))
-                    .map(e -> Arrays.asList(e.split("\\|")))
-                    .forEach(e -> sortDirectionMap.put(e.get(0), getSortDirection(e)));
-            return sortDirectionMap;
-        }
-        return null;
+        return DefaultSortColumnGenerators.generateSortColumns(sorts);
     }
 
     /**
@@ -555,147 +510,7 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             @NotNull List<PathSegment> apiDimensionPathSegments,
             @NotNull DimensionDictionary dimensionDictionary
     ) {
-        try (TimedPhase timer = RequestLog.startTiming("GeneratingDimensionFields")) {
-            return apiDimensionPathSegments.stream()
-                    .filter(pathSegment -> !pathSegment.getPath().isEmpty())
-                    .collect(Collectors.toMap(
-                            pathSegment -> dimensionDictionary.findByApiName(pathSegment.getPath()),
-                            pathSegment -> bindShowClause(pathSegment, dimensionDictionary),
-                            (LinkedHashSet<DimensionField> e, LinkedHashSet<DimensionField> i) -> {
-                                e.addAll(i);
-                                return e;
-                            },
-                            LinkedHashMap::new
-                    ));
-        }
-    }
-
-    /**
-     * Given a path segment, bind the fields specified in it's "show" matrix parameter for the dimension specified in
-     * the path segment's path.
-     *
-     * @param pathSegment  Path segment to bind from
-     * @param dimensionDictionary  Dimension dictionary to look the dimension up in
-     *
-     * @return the set of bound DimensionFields specified in the show clause
-     * @throws BadApiRequestException if any of the specified fields are not valid for the dimension
-     */
-    private LinkedHashSet<DimensionField> bindShowClause(
-            PathSegment pathSegment,
-            DimensionDictionary dimensionDictionary
-    )
-            throws BadApiRequestException {
-        Dimension dimension = dimensionDictionary.findByApiName(pathSegment.getPath());
-        List<String> showFields = pathSegment.getMatrixParameters().entrySet().stream()
-                .filter(entry -> entry.getKey().equals("show"))
-                .flatMap(entry -> entry.getValue().stream())
-                .flatMap(s -> Arrays.stream(s.split(",")))
-                .collect(Collectors.toList());
-
-        if (showFields.size() == 1 && showFields.contains(DimensionFieldSpecifierKeywords.ALL.toString())) {
-            // Show all fields
-            return dimension.getDimensionFields();
-        } else if (showFields.size() == 1 && showFields.contains(DimensionFieldSpecifierKeywords.NONE.toString())) {
-            // Show no fields
-            return new LinkedHashSet<>();
-        } else if (!showFields.isEmpty()) {
-            // Show the requested fields
-            return bindDimensionFields(dimension, showFields);
-        } else {
-            // Show the default fields
-            return dimension.getDefaultDimensionFields();
-        }
-    }
-
-    /**
-     * Given a Dimension and a set of DimensionField names, bind the names to the available dimension fields of the
-     * dimension.
-     *
-     * @param dimension  Dimension to bind the fields for
-     * @param showFields  Names of the fields to bind
-     *
-     * @return the set of DimensionFields for the names
-     * @throws BadApiRequestException if any of the names are not dimension fields on the dimension
-     */
-    private LinkedHashSet<DimensionField> bindDimensionFields(Dimension dimension, List<String> showFields)
-            throws BadApiRequestException {
-        Map<String, DimensionField> dimensionNameToFieldMap = dimension.getDimensionFields().stream()
-                .collect(StreamUtils.toLinkedDictionary(DimensionField::getName));
-
-        LinkedHashSet<DimensionField> dimensionFields = new LinkedHashSet<>();
-        Set<String> invalidDimensionFields = new LinkedHashSet<>();
-        for (String field : showFields) {
-            if (dimensionNameToFieldMap.containsKey(field)) {
-                dimensionFields.add(dimensionNameToFieldMap.get(field));
-            } else {
-                invalidDimensionFields.add(field);
-            }
-        }
-
-        if (!invalidDimensionFields.isEmpty()) {
-            LOG.debug(DIMENSION_FIELDS_UNDEFINED.logFormat(invalidDimensionFields, dimension.getApiName()));
-            throw new BadApiRequestException(DIMENSION_FIELDS_UNDEFINED.format(
-                    invalidDimensionFields,
-                    dimension.getApiName()
-            ));
-        }
-        return dimensionFields;
-    }
-
-    /**
-     * Validate that the request references any non-aggregatable dimensions in a valid way.
-     *
-     * @param apiDimensions  the set of group by dimensions.
-     * @param apiFilters  the set of api filters.
-     *
-     * @throws BadApiRequestException if a the request violates aggregatability constraints of dimensions.
-     */
-    protected void validateAggregatability(Set<Dimension> apiDimensions, Map<Dimension, Set<ApiFilter>> apiFilters)
-            throws BadApiRequestException {
-        // The set of non-aggregatable dimensions requested as group by dimensions
-        Set<Dimension> nonAggGroupByDimensions = apiDimensions.stream()
-                .filter(StreamUtils.not(Dimension::isAggregatable))
-                .collect(Collectors.toSet());
-
-        // Check that out of the non-aggregatable dimensions that are not referenced in the group by set already,
-        // none of them is mentioned in a filter with more or less than one value
-        boolean isValid = apiFilters.entrySet().stream()
-                .filter(entry -> !entry.getKey().isAggregatable())
-                .filter(entry -> !nonAggGroupByDimensions.contains(entry.getKey()))
-                .map(Map.Entry::getValue)
-                .noneMatch(valueSet -> valueSet.stream().anyMatch(isNonAggregatableInFilter()));
-
-        if (!isValid) {
-            List<String> invalidDimensionsInFilters = apiFilters.entrySet().stream()
-                    .filter(entry -> !entry.getKey().isAggregatable())
-                    .filter(entry -> !nonAggGroupByDimensions.contains(entry.getKey()))
-                    .filter(entry -> entry.getValue().stream().anyMatch(isNonAggregatableInFilter()))
-                    .map(Map.Entry::getKey)
-                    .map(Dimension::getApiName)
-                    .collect(Collectors.toList());
-
-            LOG.debug(NON_AGGREGATABLE_INVALID.logFormat(invalidDimensionsInFilters));
-            throw new BadApiRequestException(NON_AGGREGATABLE_INVALID.format(invalidDimensionsInFilters));
-        }
-    }
-
-    /**
-     * Validity rules for non-aggregatable dimensions that are only referenced in filters.
-     * A query that references a non-aggregatable dimension in a filter without grouping by this dimension, is valid
-     * only if the requested dimension field is a key for this dimension and only a single value is requested
-     * with an inclusive operator ('in' or 'eq').
-     *
-     * @return A predicate that determines a given dimension is non aggregatable and also not constrained to one row
-     * per result
-     */
-    public static Predicate<ApiFilter> isNonAggregatableInFilter() {
-        return apiFilter ->
-                !apiFilter.getDimensionField().equals(apiFilter.getDimension().getKey()) ||
-                        apiFilter.getValues().size() != 1 ||
-                        !(
-                                apiFilter.getOperation().equals(FilterOperation.in) ||
-                                        apiFilter.getOperation().equals(FilterOperation.eq)
-                        );
+        return DefaultDimensionGenerators.generateDimensionFields(apiDimensionPathSegments, dimensionDictionary);
     }
 
     /**
@@ -715,105 +530,13 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             DimensionDictionary dimensionDictionary,
             LogicalTable table
     ) throws BadApiRequestException {
-        try (TimedPhase timer = RequestLog.startTiming("GeneratingLogicalMetrics")) {
-            LOG.trace("Metric dictionary: {}", metricDictionary);
-
-            if (apiMetricQuery == null || "".equals(apiMetricQuery)) {
-                LOG.debug(METRICS_MISSING.logFormat());
-                throw new BadApiRequestException(METRICS_MISSING.format());
-            }
-            // set of logical metric objects
-            LinkedHashSet<LogicalMetric> generated = new LinkedHashSet<>();
-            List<String> invalidMetricNames = new ArrayList<>();
-
-            //If INTERSECTION_REPORTING_ENABLED flag is true, convert the aggregators into FilteredAggregators and
-            //replace old PostAggs with new postAggs in order to generate a new Filtered Logical Metric
-            if (BardFeatureFlag.INTERSECTION_REPORTING.isOn()) {
-                ArrayNode metricsJsonArray;
-                try {
-                    //For a given metricString, returns an array of json objects contains metric name and associated
-                    // filters
-
-                    metricsJsonArray = MetricParser.generateMetricFilterJsonArray(apiMetricQuery);
-                } catch (IllegalArgumentException e) {
-                    LOG.debug(INCORRECT_METRIC_FILTER_FORMAT.logFormat(e.getMessage()));
-                    throw new BadApiRequestException(INCORRECT_METRIC_FILTER_FORMAT.format(apiMetricQuery));
-                }
-                //check for the duplicate occurrence of metrics in an API
-                FieldConverterSupplier.metricsFilterSetBuilder.validateDuplicateMetrics(metricsJsonArray);
-                for (int i = 0; i < metricsJsonArray.size(); i++) {
-                    JsonNode jsonObject;
-                    try {
-                        jsonObject = metricsJsonArray.get(i);
-                    } catch (IndexOutOfBoundsException e) {
-                        LOG.debug(INCORRECT_METRIC_FILTER_FORMAT.logFormat(e.getMessage()));
-                        throw new BadApiRequestException(INCORRECT_METRIC_FILTER_FORMAT.format(apiMetricQuery));
-                    }
-                    String metricName = jsonObject.get("name").asText();
-                    LogicalMetric logicalMetric = metricDictionary.get(metricName);
-
-                    // If metric dictionary returns a null, it means the requested metric is not found.
-                    if (logicalMetric == null) {
-                        invalidMetricNames.add(metricName);
-                    } else {
-                        //metricFilterObject contains all the filters for a given metric
-                        JsonNode metricFilterObject = jsonObject.get("filter");
-
-                        //Currently supporting AND operation for metric filters.
-                        if (metricFilterObject.has("AND") && !metricFilterObject.get("AND").isNull()) {
-
-                            //We currently do not support ratio metrics
-                            if (logicalMetric.getCategory().equals(RATIO_METRIC_CATEGORY)) {
-                                LOG.debug(
-                                        UNSUPPORTED_FILTERED_METRIC_CATEGORY.logFormat(
-                                                logicalMetric.getName(),
-                                                logicalMetric.getCategory()
-                                        )
-                                );
-                                throw new BadApiRequestException(
-                                        UNSUPPORTED_FILTERED_METRIC_CATEGORY.format(
-                                                logicalMetric.getName(),
-                                                logicalMetric.getCategory()
-                                        )
-                                );
-                            }
-                            try {
-                                logicalMetric = FieldConverterSupplier.metricsFilterSetBuilder.getFilteredLogicalMetric(
-                                        logicalMetric,
-                                        metricFilterObject,
-                                        dimensionDictionary,
-                                        table,
-                                        this
-                                );
-                            } catch (DimensionRowNotFoundException dimRowException) {
-                                LOG.debug(dimRowException.getMessage());
-                                throw new BadApiRequestException(dimRowException.getMessage(), dimRowException);
-                            }
-
-                            //If metric filter isn't empty or it has anything other then 'AND' then throw an exception
-                        } else if (!metricFilterObject.asText().isEmpty()) {
-                            LOG.debug(INVALID_METRIC_FILTER_CONDITION.logFormat(metricFilterObject.asText()));
-                            throw new BadApiRequestException(
-                                    INVALID_METRIC_FILTER_CONDITION.format(metricFilterObject.asText())
-                            );
-                        }
-                        generated.add(logicalMetric);
-                    }
-                }
-
-                if (!invalidMetricNames.isEmpty()) {
-                    String message = ErrorMessageFormat.METRICS_UNDEFINED.logFormat(invalidMetricNames);
-                    LOG.error(message);
-                    throw new BadApiRequestException(message);
-                }
-            } else {
-                //Feature flag for intersection reporting is disabled
-                // list of metrics extracted from the query string
-                generated = generateLogicalMetrics(apiMetricQuery, metricDictionary);
-            }
-            LOG.trace("Generated set of logical metric: {}", generated);
-            return generated;
-        }
+        return DefaultLogicalMetricsGenerators.generateLogicalMetrics(
+                apiMetricQuery,
+                metricDictionary,
+                dimensionDictionary,
+                table,
+                filterBuilder
+        );
     }
 
     /**
@@ -826,25 +549,6 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
      */
     protected DateTime getCurrentDate(DateTime dateTime, TimeGrain timeGrain) {
         return timeGrain.roundFloor(dateTime);
-    }
-
-    /**
-     * Extract valid sort direction.
-     *
-     * @param columnWithDirection  Column and its sorting direction
-     *
-     * @return Sorting direction. If no direction provided then the default one will be DESC
-     */
-    protected SortDirection getSortDirection(List<String> columnWithDirection) {
-        try {
-            return columnWithDirection.size() == 2 ?
-                    SortDirection.valueOf(columnWithDirection.get(1).toUpperCase(Locale.ENGLISH)) :
-                    SortDirection.DESC;
-        } catch (IllegalArgumentException ignored) {
-            String sortDirectionName = columnWithDirection.get(1);
-            LOG.debug(SORT_DIRECTION_INVALID.logFormat(sortDirectionName));
-            throw new BadApiRequestException(SORT_DIRECTION_INVALID.format(sortDirectionName));
-        }
     }
 
     /**
@@ -862,52 +566,8 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             Set<LogicalMetric> logicalMetrics,
             MetricDictionary metricDictionary
     ) throws BadApiRequestException {
-        try (TimedPhase timer = RequestLog.startTiming("GeneratingSortColumns")) {
-            String sortMetricName;
-            LinkedHashSet<OrderByColumn> metricSortColumns = new LinkedHashSet<>();
 
-            if (sortDirectionMap == null) {
-                return metricSortColumns;
-            }
-            List<String> unknownMetrics = new ArrayList<>();
-            List<String> unmatchedMetrics = new ArrayList<>();
-            List<String> unsortableMetrics = new ArrayList<>();
-
-            for (Map.Entry<String, SortDirection> entry : sortDirectionMap.entrySet())  {
-                sortMetricName = entry.getKey();
-
-                LogicalMetric logicalMetric = metricDictionary.get(sortMetricName);
-
-                // If metric dictionary returns a null, it means the requested sort metric is not found.
-                if (logicalMetric == null) {
-                    unknownMetrics.add(sortMetricName);
-                    continue;
-                }
-                if (!logicalMetrics.contains(logicalMetric)) {
-                    unmatchedMetrics.add(sortMetricName);
-                    continue;
-                }
-                if (logicalMetric.getTemplateDruidQuery() == null) {
-                    unsortableMetrics.add(sortMetricName);
-                    continue;
-                }
-                metricSortColumns.add(new OrderByColumn(logicalMetric, entry.getValue()));
-            }
-            if (!unknownMetrics.isEmpty()) {
-                LOG.debug(SORT_METRICS_UNDEFINED.logFormat(unknownMetrics.toString()));
-                throw new BadApiRequestException(SORT_METRICS_UNDEFINED.format(unknownMetrics.toString()));
-            }
-            if (!unmatchedMetrics.isEmpty()) {
-                LOG.debug(SORT_METRICS_NOT_IN_QUERY_FORMAT.logFormat(unmatchedMetrics.toString()));
-                throw new BadApiRequestException(SORT_METRICS_NOT_IN_QUERY_FORMAT.format(unmatchedMetrics.toString()));
-            }
-            if (!unsortableMetrics.isEmpty()) {
-                LOG.debug(SORT_METRICS_NOT_SORTABLE_FORMAT.logFormat(unsortableMetrics.toString()));
-                throw new BadApiRequestException(SORT_METRICS_NOT_SORTABLE_FORMAT.format(unsortableMetrics.toString()));
-            }
-
-            return metricSortColumns;
-        }
+        return DefaultSortColumnGenerators.generateSortColumns(sortDirectionMap, logicalMetrics, metricDictionary);
     }
 
     /**
@@ -927,104 +587,6 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
             throw new BadApiRequestException(INTEGER_INVALID.logFormat(value, parameterName), nfe);
         }
     }
-
-    // CHECKSTYLE:OFF
-    @Override
-    public DataApiRequestImpl withFormat(ResponseFormatType format) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withPaginationParameters(Optional<PaginationParameters> paginationParameters) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withUriInfo(UriInfo uriInfo) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withBuilder(Response.ResponseBuilder builder) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withTable(LogicalTable table) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withGranularity(Granularity granularity) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withDimensions(Set<Dimension> dimensions) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withPerDimensionFields(LinkedHashMap<Dimension, LinkedHashSet<DimensionField>> perDimensionFields) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withLogicalMetrics(Set<LogicalMetric> logicalMetrics) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withIntervals(Set<Interval> intervals) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withFilters(ApiFilters apiFilters) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withHavings(Map<LogicalMetric, Set<ApiHaving>> havings) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withHaving(Having having) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withSorts(LinkedHashSet<OrderByColumn> sorts) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withCount(int count) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withTopN(int topN) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withAsyncAfter(long asyncAfter) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withTimeZone(DateTimeZone timeZone) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    @Override
-    public DataApiRequestImpl withFilterBuilder(DruidFilterBuilder filterBuilder) {
-        return new DataApiRequestImpl(format, paginationParameters, uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, filterBuilder, havingApiGenerator, dateTimeSort);
-    }
-
-    // CHECKSTYLE:ON
 
     /**
      * Gets the filter dimensions form the given set of filter objects.
@@ -1071,23 +633,6 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
         return this.apiFilters;
     }
 
-    /**
-     * Builds and returns the Druid filters from this request's {@link ApiFilter}s.
-     * <p>
-     * The Druid filters are built (an expensive operation) every time this method is called. Use it judiciously.
-     *
-     * @return the Druid filter
-     */
-    @Override
-    public Filter getDruidFilter() {
-        try (TimedPhase timer = RequestLog.startTiming("BuildingDruidFilter")) {
-            return filterBuilder.buildFilters(this.apiFilters);
-        } catch (DimensionRowNotFoundException e) {
-            LOG.debug(e.getMessage());
-            throw new BadApiRequestException(e);
-        }
-    }
-
     @Override
     public Map<LogicalMetric, Set<ApiHaving>> getHavings() {
         return this.havings;
@@ -1119,12 +664,105 @@ public class DataApiRequestImpl extends ApiRequestImpl implements DataApiRequest
     }
 
     @Override
+    public Optional<OrderByColumn> getDateTimeSort() {
+        return dateTimeSort;
+    }
+
+    @Override
     public DruidFilterBuilder getFilterBuilder() {
         return filterBuilder;
     }
 
+    // CHECKSTYLE:OFF
     @Override
-    public Optional<OrderByColumn> getDateTimeSort() {
-        return dateTimeSort;
+    public DataApiRequest withFormat(ResponseFormatType format) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
     }
+
+    @Override
+    public DataApiRequest withPaginationParameters(Optional<PaginationParameters> paginationParameters) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withUriInfo(UriInfo uriInfo) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withTable(LogicalTable table) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withGranularity(Granularity granularity) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withDimensions(Set<Dimension> dimensions) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withPerDimensionFields(LinkedHashMap<Dimension, LinkedHashSet<DimensionField>> perDimensionFields) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withLogicalMetrics(Set<LogicalMetric> logicalMetrics) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withIntervals(Set<Interval> intervals) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withFilters(ApiFilters apiFilters) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withHavings(Map<LogicalMetric, Set<ApiHaving>> havings) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withHaving(Having having) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withSorts(LinkedHashSet<OrderByColumn> sorts) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withCount(int count) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withTopN(int topN) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withAsyncAfter(long asyncAfter) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withTimeZone(DateTimeZone timeZone) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    @Override
+    public DataApiRequest withFilterBuilder(DruidFilterBuilder filterBuilder) {
+        return new DataApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, table, granularity, dimensions, perDimensionFields, logicalMetrics, intervals, apiFilters, havings, having, sorts, count, topN, asyncAfter, timeZone, havingApiGenerator, dateTimeSort, filterBuilder);
+    }
+
+    // CHECKSTYLE:ON
 }

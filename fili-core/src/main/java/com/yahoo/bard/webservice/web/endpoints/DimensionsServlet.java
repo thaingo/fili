@@ -291,9 +291,7 @@ public class DimensionsServlet extends EndpointServlet {
 
             // build filtered dimension rows
             SearchProvider searchProvider = apiRequest.getDimension().getSearchProvider();
-            PaginationParameters paginationParameters = apiRequest
-                    .getPaginationParameters()
-                    .orElse(apiRequest.getDefaultPagination());
+            PaginationParameters paginationParameters = apiRequest.getPaginationParameters();
             Pagination<DimensionRow> pagedRows = apiRequest.getFilters().isEmpty() ?
                     searchProvider.findAllDimensionRowsPaged(paginationParameters) :
                     searchProvider.findFilteredDimensionRowsPaged(

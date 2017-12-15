@@ -7,10 +7,9 @@ import com.yahoo.bard.webservice.data.dimension.DimensionDictionary;
 import com.yahoo.bard.webservice.data.dimension.DimensionField;
 import com.yahoo.bard.webservice.data.filterbuilders.DruidFilterBuilder;
 import com.yahoo.bard.webservice.data.metric.LogicalMetric;
-import com.yahoo.bard.webservice.druid.model.filter.Filter;
+import com.yahoo.bard.webservice.data.time.Granularity;
 import com.yahoo.bard.webservice.druid.model.having.Having;
 import com.yahoo.bard.webservice.druid.model.orderby.OrderByColumn;
-import com.yahoo.bard.webservice.data.time.Granularity;
 import com.yahoo.bard.webservice.table.LogicalTable;
 import com.yahoo.bard.webservice.web.ApiFilter;
 import com.yahoo.bard.webservice.web.ApiHaving;
@@ -28,25 +27,16 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
  * DataApiRequest Request binds, validates, and models the parts of a request to the data endpoint.
  */
  public interface DataApiRequest extends ApiRequest {
+
     String REQUEST_MAPPER_NAMESPACE = "dataApiRequestMapper";
     String RATIO_METRIC_CATEGORY = "Ratios";
     String DATE_TIME_STRING = "dateTime";
-
-    /**
-     * Builds and returns the Druid filters from this request's {@link ApiFilter}s.
-     * <p>
-     * The Druid filters are built (an expensive operation) every time this method is called. Use it judiciously.
-     *
-     * @return the Druid filter
-     */
-     Filter getDruidFilter();
 
     /**
      * The having constraints for this request, grouped by logical metrics.
@@ -177,42 +167,41 @@ import javax.ws.rs.core.UriInfo;
     );
 
     // CHECKSTYLE:OFF
-    DataApiRequestImpl withFormat(ResponseFormatType format);
 
-    DataApiRequestImpl withPaginationParameters(Optional<PaginationParameters> paginationParameters);
+    DataApiRequest withFormat(ResponseFormatType format);
 
-    DataApiRequestImpl withUriInfo(UriInfo uriInfo);
+    DataApiRequest withPaginationParameters(Optional<PaginationParameters> paginationParameters);
 
-    DataApiRequestImpl withBuilder(Response.ResponseBuilder builder);
+    DataApiRequest withUriInfo(UriInfo uriInfo);
 
-    DataApiRequestImpl withTable(LogicalTable table);
+    DataApiRequest withTable(LogicalTable table);
 
-    DataApiRequestImpl withGranularity(Granularity granularity);
+    DataApiRequest withGranularity(Granularity granularity);
 
-    DataApiRequestImpl withDimensions(Set<Dimension> dimensions);
+    DataApiRequest withDimensions(Set<Dimension> dimensions);
 
-    DataApiRequestImpl withPerDimensionFields(LinkedHashMap<Dimension,
+    DataApiRequest withPerDimensionFields(LinkedHashMap<Dimension,
             LinkedHashSet<DimensionField>> perDimensionFields);
 
-    DataApiRequestImpl withLogicalMetrics(Set<LogicalMetric> logicalMetrics);
+    DataApiRequest withLogicalMetrics(Set<LogicalMetric> logicalMetrics);
 
-    DataApiRequestImpl withIntervals(Set<Interval> intervals);
+    DataApiRequest withIntervals(Set<Interval> intervals);
 
-    DataApiRequestImpl withFilters(ApiFilters filters);
+    DataApiRequest withFilters(ApiFilters filters);
 
-    DataApiRequestImpl withHavings(Map<LogicalMetric, Set<ApiHaving>> havings);
+    DataApiRequest withHavings(Map<LogicalMetric, Set<ApiHaving>> havings);
 
-    DataApiRequestImpl withHaving(Having having);
+    DataApiRequest withHaving(Having having);
 
-    DataApiRequestImpl withSorts(LinkedHashSet<OrderByColumn> sorts);
+    DataApiRequest withSorts(LinkedHashSet<OrderByColumn> sorts);
 
-    DataApiRequestImpl withCount(int count);
+    DataApiRequest withCount(int count);
 
-    DataApiRequestImpl withTopN(int topN);
+    DataApiRequest withTopN(int topN);
 
-    DataApiRequestImpl withAsyncAfter(long asyncAfter);
+    DataApiRequest withAsyncAfter(long asyncAfter);
 
-    DataApiRequestImpl withTimeZone(DateTimeZone timeZone);
+    DataApiRequest withTimeZone(DateTimeZone timeZone);
 
-    DataApiRequestImpl withFilterBuilder(DruidFilterBuilder filterBuilder);
+    DataApiRequest withFilterBuilder(DruidFilterBuilder filterBuilder);
 }

@@ -23,6 +23,7 @@ import com.yahoo.bard.webservice.table.LogicalTable
 import com.yahoo.bard.webservice.table.TableGroup
 import com.yahoo.bard.webservice.util.DateTimeFormatterFactory
 import com.yahoo.bard.webservice.util.IntervalUtils
+import com.yahoo.bard.webservice.web.apirequest.DateAndTimeGenerators
 import com.yahoo.bard.webservice.web.apirequest.utils.TestingDataApiRequestImpl
 
 import org.joda.time.DateTime
@@ -94,13 +95,13 @@ class DataApiRequestIntervalsSpec extends Specification {
         Interval expectedInterval = new Interval(parsedStart, parsedStop)
 
         expect: "The interval string parses into a single interval"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser), dateTimeFormatter
         ).size() == 1
 
         and: "It parses to the interval we expect"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser), dateTimeFormatter
         ).first() == expectedInterval
@@ -141,13 +142,13 @@ class DataApiRequestIntervalsSpec extends Specification {
         Interval expectedInterval = new Interval(parsedStart, parsedStop)
 
         expect: "The interval string parses into a single interval"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser), dateTimeFormatter
         ).size() == 1
 
         and: "It parses to the interval we expect"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser), dateTimeFormatter
         ).first() == expectedInterval
@@ -193,14 +194,14 @@ class DataApiRequestIntervalsSpec extends Specification {
         Interval expectedInterval = new Interval(parsedStart, parsedStop)
 
         expect: "The interval string parses into a single interval"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser),
                 dateTimeFormatter
         ).size() == 1
 
         and: "It parses to the interval we expect"
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser),
                 dateTimeFormatter
@@ -237,7 +238,7 @@ class DataApiRequestIntervalsSpec extends Specification {
     @Unroll
     def "check invalid usage of macros as time intervals string #intervalString"() {
         when:
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 apiRequest.generateGranularity(name, granularityParser),
                 dateTimeFormatter
@@ -264,7 +265,7 @@ class DataApiRequestIntervalsSpec extends Specification {
         }
 
         expect:
-        Set<Interval> intervals = new TestingDataApiRequestImpl().generateIntervals(
+        Set<Interval> intervals = DateAndTimeGenerators.generateIntervals(
                 interval1 + "," + interval2,
                 apiRequest.generateGranularity("day", granularityParser),
                 dateTimeFormatter
@@ -279,7 +280,7 @@ class DataApiRequestIntervalsSpec extends Specification {
     @Unroll
     def "check bad generateIntervals throws #reason.simpleName"() {
         when:
-        new TestingDataApiRequestImpl().generateIntervals(
+        DateAndTimeGenerators.generateIntervals(
                 interval1 + "," + interval2,
                 apiRequest.generateGranularity("day", granularityParser),
                 dateTimeFormatter

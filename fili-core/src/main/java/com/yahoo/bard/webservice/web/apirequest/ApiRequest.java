@@ -4,6 +4,7 @@ package com.yahoo.bard.webservice.web.apirequest;
 
 import static com.yahoo.bard.webservice.util.DateTimeFormatterFactory.FULLY_OPTIONAL_DATETIME_FORMATTER;
 
+import com.yahoo.bard.webservice.util.AllPagesPagination;
 import com.yahoo.bard.webservice.util.Pagination;
 import com.yahoo.bard.webservice.web.ResponseFormatType;
 import com.yahoo.bard.webservice.web.util.PaginationParameters;
@@ -12,10 +13,8 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 /**
@@ -48,7 +47,7 @@ public interface ApiRequest {
      *
      * @return The pagination parameters for this API request
      */
-     Optional<PaginationParameters> getPaginationParameters();
+     PaginationParameters getPaginationParameters();
 
     /**
      * Get the uri info.
@@ -74,21 +73,6 @@ public interface ApiRequest {
      long getAsyncAfter();
 
     /**
-     * Get the response builder associated with this request.
-     *
-     * @return The response builder.
-     */
-     Response.ResponseBuilder getBuilder();
-
-    /**
-     * Get the default pagination parameters for this type of API request.
-     *
-     * @return The uri info of this type of API request
-     */
-     PaginationParameters getDefaultPagination();
-
-
-    /**
      * Add links to the response builder and return a stream with the requested page from the raw data.
      *
      * @param <T>  The type of the collection elements
@@ -101,7 +85,9 @@ public interface ApiRequest {
      * in how pagination is done.
      */
     @Deprecated
-     <T> Stream<T> getPage(Collection<T> data);
+     default <T> Stream<T> getPage(Collection<T> data) {
+        return getPage(new AllPagesPagination<>(data, getPaginationParameters()));
+    }
 
     /**
      * Add links to the response builder and return a stream with the requested page from the raw data.

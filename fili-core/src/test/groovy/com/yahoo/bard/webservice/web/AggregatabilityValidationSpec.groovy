@@ -16,6 +16,7 @@ import com.yahoo.bard.webservice.data.metric.MetricDictionary
 import com.yahoo.bard.webservice.table.LogicalTable
 import com.yahoo.bard.webservice.table.TableGroup
 import com.yahoo.bard.webservice.web.apirequest.DataApiRequest
+import com.yahoo.bard.webservice.web.apirequest.ApiRequestValidators
 import com.yahoo.bard.webservice.web.apirequest.utils.TestingDataApiRequestImpl
 
 import org.joda.time.DateTime
@@ -170,7 +171,7 @@ class AggregatabilityValidationSpec extends Specification {
         Map<Dimension, Set<ApiFilter>> filters = apiRequest.generateFilters(filterString, table, dimensionDict)
 
         when:
-        apiRequest.validateAggregatability(dims, filters)
+        ApiRequestValidators.validateAggregatability(dims, filters)
 
         then:
         thrown exception

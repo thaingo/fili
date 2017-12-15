@@ -2,48 +2,46 @@
 // Licensed under the terms of the Apache license. Please see LICENSE.md file distributed with this work for terms.
 package com.yahoo.bard.webservice.web.apirequest;
 
+import com.yahoo.bard.webservice.data.metric.MetricDictionary;
 import com.yahoo.bard.webservice.web.util.BardConfigResources;
+import com.yahoo.bard.webservice.web.util.PaginationParameters;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.UriInfo;
 
 /**
- * Layer of injection to provide preprocessing of BardConfig in response to request parameters and transformation of
- * request parameters before performing binding in the ApiRequest constructors.
+ * An interface for a factory used to build DataApiRequests.
  */
 public interface DataApiRequestFactory {
 
     /**
-     * Factory method for building {@link DataApiRequest} objects.
+     * A default method implementing the same pattern as the classic DataApiRequest constructor.
      *
-     * @param tableName  logical table corresponding to the table name specified in the URL
-     * @param granularity  string time granularity in URL
-     * @param dimensions  single dimension or multiple dimensions separated by '/' in URL
-     * @param logicalMetrics  URL logical metric query string in the format:
-     * <pre>{@code single metric or multiple logical metrics separated by ',' }</pre>
-     * @param intervals  URL intervals query string in the format:
-     * <pre>{@code single interval in ISO 8601 format, multiple values separated by ',' }</pre>
-     * @param apiFilters  URL filter query String
-     * @param havings  URL having query String
-     * @param sorts  string of sort columns along with sort direction
-     * @param count  count of number of records to be returned in the response
-     * @param topN  number of first records per time bucket to be returned in the response
-     * @param format  response data format
-     * @param timeZoneId  a joda time zone id
-     * @param asyncAfter  How long the user is willing to wait for a synchronous request in milliseconds
-     * @param perPage  number of rows to display per page of results. If present in the original request,
-     * must be a positive integer. If not present, must be the empty string.
-     * @param page  desired page of results. If present in the original request, must be a positive
-     * integer. If not present, must be the empty string.
-     * @param uriInfo  The URI of the request object.
-     * @param bardConfigResources  The configuration resources used to build this api request
+     * @param tableName  The name of the logical table
+     * @param granularity  The granularity of the logical table
+     * @param dimensions  The grouping dimensions
+     * @param logicalMetrics  The reporting metrics
+     * @param intervals  The reporting intervals
+     * @param apiFilters  The dimension filters
+     * @param havings  The having clause
+     * @param sorts  The sort columns
+     * @param count  The row limit
+     * @param topN  The top n per bucket limit
+     * @param format  The response format
+     * @param timeZoneId  The name of the timezone
+     * @param asyncAfter  The period to asycn after
+     * @param perPage  The rows per page
+     * @param page  The page number
+     * @param requestContext  The request context
+     * @param bardConfigResources  The configuration
      *
-     * @return A DataApiRequestImpl instance
+     * @return  An api request with bound and valid domain objects.
      */
-    DataApiRequest buildApiRequest(
+    default DataApiRequest buildDataApiRequestRequest(
             String tableName,
             String granularity,
             List<PathSegment> dimensions,
@@ -59,7 +57,46 @@ public interface DataApiRequestFactory {
             String asyncAfter,
             @NotNull String perPage,
             @NotNull String page,
-            UriInfo uriInfo,
-            BardConfigResources bardConfigResources
+            ContainerRequestContext requestContext,
+            BardConfigResources bardConfigResources) {
+        return buildDataApiRequestRequest(
+                new DataApiRequestModel(
+                        tableName,
+                        granularity,
+                        dimensions,
+                        logicalMetrics,
+                        intervals,
+                        apiFilters,
+                        havings,
+                        sorts,
+                        count,
+                        topN,
+                        format,
+                        timeZoneId
+                ),
+                asyncAfter,
+                DefaultOutputFormatGenerators.generatePaginationParameters(perPage, page),
+                requestContext,
+                bardConfigResources.getMetricDictionary()
+        );
+    }
+
+    /**
+     * Build an api request.
+     *
+     * @param model  A description of the URI request parameters
+     * @param asyncAfter  The time until asynchronous processing
+     * @param paginationParameters  The pagination parameters
+     * @param requestContext  The request context
+     * @param metricDictionary  The dictionary of metrics for this query
+     *
+     * @return  An api request with bound and valid domain objects.
+     */
+    DataApiRequest buildDataApiRequestRequest(
+            DataApiRequestModel model,
+            String asyncAfter,
+            Optional<PaginationParameters> paginationParameters,
+            ContainerRequestContext requestContext,
+            MetricDictionary metricDictionary
     );
 }

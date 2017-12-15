@@ -7,7 +7,9 @@ pull request if there was one.
 
 ### Added:
 
--- [An injection point for customizing the WebLoggingFilter to use during tests](https://github.com/yahoo/fili/pull/749)
+- [Created Injectable POJO DataApiRequest and StandardFactory]()
+
+- [An injection point for customizing the WebLoggingFilter to use during tests](https://github.com/yahoo/fili/pull/749)
     * Extend `JerseyTestBinder` and override `getLoggingFilter`.
 
 - [An injection point for customizing Exception handling]https://github.com/yahoo/fili/pull/742)
@@ -35,6 +37,7 @@ pull request if there was one.
 
 - [Add tests to Utils](https://github.com/yahoo/fili/pull/675)
     * Add missing tests to `Utils` class.
+
 
 ### Changed:
 

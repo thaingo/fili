@@ -3,7 +3,6 @@
 package com.yahoo.bard.webservice.web.apirequest;
 
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.EMPTY_DICTIONARY;
-import static com.yahoo.bard.webservice.web.ErrorMessageFormat.METRICS_UNDEFINED;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TABLE_UNDEFINED;
 
 import com.yahoo.bard.webservice.data.dimension.Dimension;
@@ -20,14 +19,12 @@ import com.yahoo.bard.webservice.web.BadApiRequestException;
 import com.yahoo.bard.webservice.web.ResponseFormatType;
 import com.yahoo.bard.webservice.web.filters.ApiFilters;
 import com.yahoo.bard.webservice.web.util.BardConfigResources;
-
 import com.yahoo.bard.webservice.web.util.PaginationParameters;
+
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -173,31 +170,31 @@ public class TablesApiRequestImpl extends ApiRequestImpl implements TablesApiReq
         // parse dimensions
         DimensionDictionary dimensionDictionary = bardConfigResources.getDimensionDictionary();
         this.dimensions = generateDimensions(dimensions, dimensionDictionary);
-        validateRequestDimensions(this.dimensions, this.table);
+        ApiRequestValidators.validateRequestDimensions(this.dimensions, this.table);
 
         // parse metrics
         this.logicalMetrics = generateLogicalMetrics(
                 metrics,
                 bardConfigResources.getMetricDictionary().getScope(Collections.singletonList(tableName))
         );
-        validateMetrics(this.logicalMetrics, this.table);
+        ApiRequestValidators.validateMetrics(this.logicalMetrics, this.table);
 
         // parse interval
-        this.intervals = generateIntervals(
+        this.intervals = DateAndTimeGenerators.generateIntervals(
                 intervals,
                 this.granularity,
-                generateDateTimeFormatter(
-                        generateTimeZone(
+                DateAndTimeGenerators.generateDateTimeFormatter(
+                        DateAndTimeGenerators.generateTimeZone(
                                 timeZoneId,
                                 bardConfigResources.getSystemTimeZone()
                         )
                 )
         );
-        validateTimeAlignment(this.granularity, this.intervals);
+        ApiRequestValidators.validateTimeAlignment(this.granularity, this.intervals);
 
         // parse filters
         this.apiFilters = generateFilters(filters, table, dimensionDictionary);
-        validateRequestDimensions(getFilterDimensions(), this.table);
+        ApiRequestValidators.validateRequestDimensions(getFilterDimensions(), this.table);
 
         LOG.debug(
                 "Api request: Tables: {},\nGranularity: {},\nFormat: {}\nPagination: {}" +
@@ -294,49 +291,6 @@ public class TablesApiRequestImpl extends ApiRequestImpl implements TablesApiReq
         return generated;
     }
 
-    /**
-     * Extracts the list of metrics from the url metric query string and generates a set of LogicalMetrics.
-     *
-     * @param apiMetricQuery  URL query string containing the metrics separated by ','.
-     * @param metricDictionary  Metric dictionary contains the map of valid metric names and logical metric objects.
-     *
-     * @return Set of metric objects.
-     * @throws BadApiRequestException if the metric dictionary returns a null or if the apiMetricQuery is invalid.
-     */
-    protected LinkedHashSet<LogicalMetric> generateLogicalMetrics(
-            String apiMetricQuery,
-            MetricDictionary metricDictionary
-    ) throws BadApiRequestException {
-        try (TimedPhase timer = RequestLog.startTiming("GeneratingLogicalMetrics")) {
-            LOG.trace("Metric dictionary: {}", metricDictionary);
-
-            if (apiMetricQuery == null || "".equals(apiMetricQuery)) {
-                return new LinkedHashSet<>();
-            }
-            // set of logical metric objects
-            LinkedHashSet<LogicalMetric> generated = new LinkedHashSet<>();
-            List<String> invalidMetricNames = new ArrayList<>();
-
-            List<String> metricApiQuery = Arrays.asList(apiMetricQuery.split(","));
-            for (String metricName : metricApiQuery) {
-                LogicalMetric logicalMetric = metricDictionary.get(metricName);
-
-                // If metric dictionary returns a null, it means the requested metric is not found.
-                if (logicalMetric == null) {
-                    invalidMetricNames.add(metricName);
-                } else {
-                    generated.add(logicalMetric);
-                }
-            }
-
-            if (!invalidMetricNames.isEmpty()) {
-                LOG.debug(METRICS_UNDEFINED.logFormat(invalidMetricNames.toString()));
-                throw new BadApiRequestException(METRICS_UNDEFINED.format(invalidMetricNames.toString()));
-            }
-            LOG.trace("Generated set of logical metric: {}", generated);
-            return generated;
-        }
-    }
 
     @Override
     public Set<LogicalTable> getTables() {

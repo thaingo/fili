@@ -54,7 +54,7 @@ public abstract class EndpointServlet {
         Response.ResponseBuilder builder;
         switch (apiRequest.getFormat()) {
             case CSV:
-                builder = apiRequest.getBuilder()
+                builder = Response.status(Response.Status.OK)
                         .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=utf-8")
                         .header(
                                 HttpHeaders.CONTENT_DISPOSITION,
@@ -71,7 +71,7 @@ public abstract class EndpointServlet {
             case JSON:
                 // Fall-through: Default is JSON
             default:
-                builder = apiRequest.getBuilder()
+                builder = Response.status(Response.Status.OK)
                         .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON + "; charset=utf-8");
 
                 output = new JsonResponse<>(

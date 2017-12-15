@@ -8,14 +8,12 @@ import com.yahoo.bard.webservice.data.config.metric.makers.ThetaSketchSetOperati
 import com.yahoo.bard.webservice.data.dimension.Dimension;
 import com.yahoo.bard.webservice.data.dimension.DimensionDictionary;
 import com.yahoo.bard.webservice.data.dimension.DimensionRowNotFoundException;
+import com.yahoo.bard.webservice.data.filterbuilders.DruidFilterBuilder;
 import com.yahoo.bard.webservice.data.metric.LogicalMetric;
 import com.yahoo.bard.webservice.data.metric.TemplateDruidQuery;
 import com.yahoo.bard.webservice.druid.model.aggregation.Aggregation;
 import com.yahoo.bard.webservice.druid.model.aggregation.FilteredAggregation;
 import com.yahoo.bard.webservice.druid.model.filter.Filter;
-import com.yahoo.bard.webservice.druid.model.filter.MultiClauseFilter;
-import com.yahoo.bard.webservice.druid.model.filter.NotFilter;
-import com.yahoo.bard.webservice.druid.model.filter.SelectorFilter;
 import com.yahoo.bard.webservice.druid.model.postaggregation.ConstantPostAggregation;
 import com.yahoo.bard.webservice.druid.model.postaggregation.FieldAccessorPostAggregation;
 import com.yahoo.bard.webservice.druid.model.postaggregation.PostAggregation;
@@ -24,7 +22,7 @@ import com.yahoo.bard.webservice.druid.model.postaggregation.ThetaSketchEstimate
 import com.yahoo.bard.webservice.druid.model.postaggregation.ThetaSketchSetOperationPostAggregation;
 import com.yahoo.bard.webservice.druid.model.postaggregation.WithFields;
 import com.yahoo.bard.webservice.table.LogicalTable;
-import com.yahoo.bard.webservice.web.apirequest.DataApiRequest;
+import com.yahoo.bard.webservice.web.apirequest.DefaultFilterGenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -72,7 +70,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
             JsonNode metricFilterObject,
             DimensionDictionary dimensionDictionary,
             LogicalTable table,
-            DataApiRequest apiRequest
+            DruidFilterBuilder filterBuilder
     ) throws DimensionRowNotFoundException {
 
         TemplateDruidQuery templateDruidQuery = logicalMetric.getTemplateDruidQuery();
@@ -84,7 +82,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
                     metricFilterObject,
                     dimensionDictionary,
                     table,
-                    apiRequest
+                    filterBuilder
             );
 
             String filterSuffix = "-" + metricFilterObject.get("AND").asText().replaceAll(ALPHANUMERIC_REGEX, "");
@@ -116,7 +114,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
                     metricFilterObject,
                     dimensionDictionary,
                     table,
-                    apiRequest
+                    filterBuilder
             );
         }
         //build new LogicalMetric and return
@@ -212,7 +210,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
             JsonNode metricFilterObject,
             DimensionDictionary dimensionDictionary,
             LogicalTable table,
-            DataApiRequest apiRequest
+            DruidFilterBuilder filterBuilder
     ) throws DimensionRowNotFoundException {
 
         Set<PostAggregation> postAggregations = query.getPostAggregations();
@@ -240,7 +238,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
                     aggregation,
                     dimensionDictionary,
                     table,
-                    apiRequest
+                    filterBuilder
             );
 
             updatedAggs.addAll(filteredAggregatorSet);
@@ -393,7 +391,7 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
             Aggregation aggregation,
             DimensionDictionary dimensionDictionary,
             LogicalTable table,
-            DataApiRequest apiRequest
+            DruidFilterBuilder filterBuilder
     ) throws DimensionRowNotFoundException {
         //Converting json filter string to a plain filter string to prepare the Filter out of it
         String filterString = filter.get("AND").asText().replace("],", "]],");
@@ -402,12 +400,12 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
         Map<String, Filter> filterHashMap = new HashMap<>();
 
         for (String aFilter : filterList) {
-            Map<Dimension, Set<ApiFilter>> metricFilter = apiRequest.generateFilters(
+            Map<Dimension, Set<ApiFilter>> metricFilter = DefaultFilterGenerator.generateFilters(
                     aFilter,
                     table,
                     dimensionDictionary
             );
-            filterHashMap.put(generateMetricName(aFilter), apiRequest.getFilterBuilder().buildFilters(metricFilter));
+            filterHashMap.put(generateMetricName(aFilter), filterBuilder.buildFilters(metricFilter));
         }
 
         for (Map.Entry<String, Filter> entry: filterHashMap.entrySet()) {
@@ -430,20 +428,5 @@ public class FilteredThetaSketchMetricsHelper implements MetricsFilterSetBuilder
     @Override
     public Set<Dimension> gatherFilterDimensions(Filter filter) {
         return gatherFilterDimensions(filter, new HashSet<>());
-    }
-
-    @Override
-    public Set<Dimension> gatherFilterDimensions(Filter filter, Set<Dimension> dimensions) {
-
-        if (filter instanceof SelectorFilter) {
-            dimensions.add(((SelectorFilter) filter).getDimension());
-        } else if (filter instanceof MultiClauseFilter) {
-            for (Filter multiclauseFilter: ((MultiClauseFilter) filter).getFields()) {
-                gatherFilterDimensions(multiclauseFilter, dimensions);
-            }
-        } else if (filter instanceof NotFilter) {
-            gatherFilterDimensions(((NotFilter) filter).getField(), dimensions);
-        }
-        return dimensions;
     }
 }

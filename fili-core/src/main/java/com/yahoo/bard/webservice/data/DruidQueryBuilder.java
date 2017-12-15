@@ -7,6 +7,7 @@ import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TOP_N_UNSORTED;
 import com.yahoo.bard.webservice.config.BardFeatureFlag;
 import com.yahoo.bard.webservice.data.dimension.Dimension;
 import com.yahoo.bard.webservice.data.dimension.DimensionRowNotFoundException;
+import com.yahoo.bard.webservice.data.filterbuilders.DruidFilterBuilder;
 import com.yahoo.bard.webservice.data.metric.TemplateDruidQuery;
 import com.yahoo.bard.webservice.druid.model.datasource.DataSource;
 import com.yahoo.bard.webservice.druid.model.datasource.QueryDataSource;
@@ -22,6 +23,8 @@ import com.yahoo.bard.webservice.data.time.Granularity;
 import com.yahoo.bard.webservice.druid.model.query.GroupByQuery;
 import com.yahoo.bard.webservice.druid.model.query.TimeSeriesQuery;
 import com.yahoo.bard.webservice.druid.model.query.TopNQuery;
+import com.yahoo.bard.webservice.logging.RequestLog;
+import com.yahoo.bard.webservice.logging.TimedPhase;
 import com.yahoo.bard.webservice.table.ConstrainedTable;
 import com.yahoo.bard.webservice.table.LogicalTable;
 import com.yahoo.bard.webservice.table.LogicalTableDictionary;
@@ -31,6 +34,9 @@ import com.yahoo.bard.webservice.table.resolver.NoMatchFoundException;
 import com.yahoo.bard.webservice.table.resolver.PhysicalTableResolver;
 import com.yahoo.bard.webservice.table.resolver.QueryPlanningConstraint;
 import com.yahoo.bard.webservice.web.apirequest.DataApiRequest;
+import com.yahoo.bard.webservice.web.ApiFilter;
+import com.yahoo.bard.webservice.web.BadApiRequestException;
+import com.yahoo.bard.webservice.web.filters.ApiFilters;
 
 import org.joda.time.DateTimeZone;
 import org.joda.time.Interval;
@@ -51,17 +57,24 @@ public class DruidQueryBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(DruidQueryBuilder.class);
     protected final LogicalTableDictionary tableDictionary;
     protected final PhysicalTableResolver resolver;
+    protected DruidFilterBuilder filterBuilder;
 
     /**
      * Constructor.
      *
      * @param tableDictionary  Dictionary of logical tables used to look up table groups
      * @param resolver  Strategy for resolving the physical table
+     * @param druidFilterBuilder  A factory method for building druid filters
      */
     @Inject
-    public DruidQueryBuilder(LogicalTableDictionary tableDictionary, PhysicalTableResolver resolver) {
+    public DruidQueryBuilder(
+            LogicalTableDictionary tableDictionary,
+            PhysicalTableResolver resolver,
+            DruidFilterBuilder druidFilterBuilder
+    ) {
         this.tableDictionary = tableDictionary;
         this.resolver = resolver;
+        this.filterBuilder = druidFilterBuilder;
         LOG.trace("Table dictionary: {} \nPhysical table resolver: {}", tableDictionary, resolver);
     }
 
@@ -126,7 +139,7 @@ public class DruidQueryBuilder {
                     request.getGranularity(),
                     request.getTimeZone(),
                     request.getDimensions(),
-                    request.getDruidFilter(),
+                    getDruidFilter(request.getApiFilters()),
                     request.getIntervals(),
                     druidTopNMetric,
                     request.getTopN().getAsInt()
@@ -137,7 +150,7 @@ public class DruidQueryBuilder {
                         table,
                         request.getGranularity(),
                         request.getTimeZone(),
-                        request.getDruidFilter(),
+                        getDruidFilter(request.getApiFilters()),
                         request.getIntervals()
                 ) :
                 buildGroupByQuery(
@@ -146,11 +159,29 @@ public class DruidQueryBuilder {
                         request.getGranularity(),
                         request.getTimeZone(),
                         request.getDimensions(),
-                        request.getDruidFilter(),
+                        getDruidFilter(request.getApiFilters()),
                         request.getHaving(),
                         request.getIntervals(),
                         druidOrderBy
                 );
+    }
+
+    /**
+     * Builds and returns the Druid filters from this request's {@link ApiFilter}s.
+     * <p>
+     * The Druid filters are built (an expensive operation) every time this method is called. Use it judiciously.
+     *
+     * @param apiFilters  The api filters being built
+     *
+     * @return the Druid filter
+     */
+    public Filter getDruidFilter(ApiFilters apiFilters) {
+        try (TimedPhase timer = RequestLog.startTiming("BuildingDruidFilter")) {
+            return filterBuilder.buildFilters(apiFilters);
+        } catch (DimensionRowNotFoundException e) {
+            LOG.debug(e.getMessage());
+            throw new BadApiRequestException(e);
+        }
     }
 
     /**

@@ -2,12 +2,14 @@
 // Licensed under the terms of the Apache license. Please see LICENSE.md file distributed with this work for terms.
 package com.yahoo.bard.webservice.web.apirequest;
 
+import com.yahoo.bard.webservice.data.metric.MetricDictionary;
 import com.yahoo.bard.webservice.web.util.BardConfigResources;
+import com.yahoo.bard.webservice.web.util.PaginationParameters;
 
 import java.util.List;
 
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.UriInfo;
 
 /**
  * An implementation of DataApiRequestFactory that does not modify the initial parameters at all.
@@ -31,7 +33,7 @@ public class DefaultDataApiRequestFactory implements DataApiRequestFactory {
             String asyncAfter,
             String perPage,
             String page,
-            UriInfo uriInfo,
+            ContainerRequestContext requestContext,
             BardConfigResources bardConfigResources
     ) {
         return new DataApiRequestImpl(
@@ -50,8 +52,19 @@ public class DefaultDataApiRequestFactory implements DataApiRequestFactory {
                 asyncAfter,
                 perPage,
                 page,
-                uriInfo,
+                requestContext,
                 bardConfigResources
         );
+    }
+
+    @Override
+    public DataApiRequest buildDataApiRequestRequest(
+            final DataApiRequestModel model,
+            final String asyncAfter,
+            final PaginationParameters paginationParameters,
+            final ContainerRequestContext requestContext,
+            final MetricDictionary dictionary
+    ) {
+        return null;
     }
 }

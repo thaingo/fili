@@ -11,6 +11,7 @@ import com.yahoo.bard.webservice.web.apirequest.DataApiRequestImpl
 import javax.ws.rs.core.Response
 
 class TestingDataApiRequestImpl extends DataApiRequestImpl {
+
     TestingDataApiRequestImpl() {
         super(
                 null,
@@ -31,9 +32,9 @@ class TestingDataApiRequestImpl extends DataApiRequestImpl {
                 0,
                 Long.MAX_VALUE,
                 null,
-                new DefaultDruidFilterBuilder(),
                 null,
-                null
+                null,
+                new DefaultDruidFilterBuilder()
         )
     }
 }

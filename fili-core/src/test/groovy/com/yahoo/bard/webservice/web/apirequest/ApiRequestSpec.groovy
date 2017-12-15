@@ -15,10 +15,10 @@ import com.yahoo.bard.webservice.data.dimension.impl.KeyValueStoreDimension
 import com.yahoo.bard.webservice.data.dimension.impl.ScanSearchProviderManager
 import com.yahoo.bard.webservice.data.metric.LogicalMetric
 import com.yahoo.bard.webservice.data.metric.MetricDictionary
-import com.yahoo.bard.webservice.data.time.StandardGranularityParser
-import com.yahoo.bard.webservice.data.time.GranularityParser
 import com.yahoo.bard.webservice.data.time.AllGranularity
 import com.yahoo.bard.webservice.data.time.Granularity
+import com.yahoo.bard.webservice.data.time.GranularityParser
+import com.yahoo.bard.webservice.data.time.StandardGranularityParser
 import com.yahoo.bard.webservice.table.LogicalTable
 import com.yahoo.bard.webservice.table.TableGroup
 import com.yahoo.bard.webservice.util.IntervalUtils
@@ -170,7 +170,7 @@ class ApiRequestSpec extends Specification {
         DateTimeFormatter dateTimeFormatter = FULLY_OPTIONAL_DATETIME_FORMATTER
 
         DateTimeZone dateTimeZone = DateTimeZone.forID(zone)
-        Set<Interval> intervals = TestingDataApiRequestImpl.generateIntervals(
+        Set<Interval> intervals = DateAndTimeGenerators.generateIntervals(
                 intervalString,
                 DAY,
                 dateTimeFormatter.withZone(dateTimeZone)
@@ -194,7 +194,7 @@ class ApiRequestSpec extends Specification {
                 "week",
                 new StandardGranularityParser()
         )
-        Set<Interval> intervals = new TestingDataApiRequestImpl().generateIntervals(
+        Set<Interval> intervals = DateAndTimeGenerators.generateIntervals(
                 "2015-02-15/2016-02-22",
                 granularity,
                 FULLY_OPTIONAL_DATETIME_FORMATTER

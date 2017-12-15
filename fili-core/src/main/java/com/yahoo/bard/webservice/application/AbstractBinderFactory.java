@@ -114,6 +114,7 @@ import com.yahoo.bard.webservice.web.apirequest.HavingGenerator;
 import com.yahoo.bard.webservice.web.apirequest.JobsApiRequest;
 import com.yahoo.bard.webservice.web.apirequest.MetricsApiRequest;
 import com.yahoo.bard.webservice.web.apirequest.PerRequestDictionaryHavingGenerator;
+import com.yahoo.bard.webservice.web.apirequest.PojoDataApiRequestFactory;
 import com.yahoo.bard.webservice.web.apirequest.SlicesApiRequest;
 import com.yahoo.bard.webservice.web.apirequest.TablesApiRequest;
 import com.yahoo.bard.webservice.web.handlers.workflow.DruidWorkflow;
@@ -244,6 +245,8 @@ public abstract class AbstractBinderFactory implements BinderFactory {
                 DruidWebService druidWebService = buildDruidWebService(getMappers().getMapper());
 
                 bind(druidWebService).to(DruidWebService.class);
+
+                bind(PojoDataApiRequestFactory.class).to(DataApiRequestFactory.class);
 
                 // A separate web service for metadata
                 DruidWebService metadataDruidWebService = null;
