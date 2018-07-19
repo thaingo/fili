@@ -22,7 +22,6 @@ import com.yahoo.bard.webservice.druid.model.postaggregation.SketchSetOperationP
 import com.yahoo.bard.webservice.druid.model.postaggregation.SketchSetOperationPostAggregation;
 import com.yahoo.bard.webservice.druid.model.postaggregation.WithFields;
 import com.yahoo.bard.webservice.table.LogicalTable;
-import com.yahoo.bard.webservice.web.apirequest.DataApiRequest;
 import com.yahoo.bard.webservice.web.apirequest.DefaultFilterGenerator;
 
 import com.fasterxml.jackson.databind.JsonNode;

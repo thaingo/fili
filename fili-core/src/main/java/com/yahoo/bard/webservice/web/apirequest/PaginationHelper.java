@@ -20,6 +20,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+/**
+ * A utility class to separate out the pagination capability from.
+ */
 public class PaginationHelper {
 
     private static final SystemConfig SYSTEM_CONFIG = SystemConfigProvider.getInstance();

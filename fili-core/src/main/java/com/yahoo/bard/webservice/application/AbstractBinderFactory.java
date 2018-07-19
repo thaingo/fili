@@ -276,18 +276,7 @@ public abstract class AbstractBinderFactory implements BinderFactory {
                 // Build the datasource metadata service containing the data segments
                 bind(getDataSourceMetadataService()).to(DataSourceMetadataService.class);
 
-                // Build the configuration loader and load configuration
-                loader = getConfigurationLoader();
-                loader.load();
-
-                // Bind the configuration dictionaries
-                bind(loader.getDimensionDictionary()).to(DimensionDictionary.class);
-                bind(loader.getMetricDictionary()).to(MetricDictionary.class);
-                bind(loader.getLogicalTableDictionary()).to(LogicalTableDictionary.class);
-                bind(loader.getPhysicalTableDictionary()).to(PhysicalTableDictionary.class);
-                bind(loader.getDictionaries()).to(ResourceDictionaries.class);
-
-                bind(buildHavingGenerator(loader)).to(HavingGenerator.class);
+                loadAndBindConfigurations(this);
 
                 // Bind the request mappers
                 bindRequestMappers(this);
@@ -377,9 +366,9 @@ public abstract class AbstractBinderFactory implements BinderFactory {
                 // Call post-binding hook to allow for additional binding
                 afterBinding(this);
             }
-
         };
     }
+
 
     /**
      * Binds all the exception handlers to the specified binder.
@@ -1172,6 +1161,27 @@ public abstract class AbstractBinderFactory implements BinderFactory {
     protected @NotNull Map<String, RequestMapper> getRequestMappers(ResourceDictionaries resourceDictionaries) {
         return new HashMap<>(0);
     }
+
+    /**
+     * Load the configuration dictionaries and bind them to their respective classes.
+     *
+     * @param binder The HK2 Binder being initialized
+     */
+    public void loadAndBindConfigurations(AbstractBinder binder) {
+        loader = getConfigurationLoader();
+        loader.load();
+
+        // Bind the configuration dictionaries
+        binder.bind(loader.getDimensionDictionary()).to(DimensionDictionary.class);
+        binder.bind(loader.getMetricDictionary()).to(MetricDictionary.class);
+        binder.bind(loader.getLogicalTableDictionary()).to(LogicalTableDictionary.class);
+        binder.bind(loader.getPhysicalTableDictionary()).to(PhysicalTableDictionary.class);
+        binder.bind(loader.getDictionaries()).to(ResourceDictionaries.class);
+
+        binder.bind(buildHavingGenerator(loader)).to(HavingGenerator.class);
+
+    }
+
 
     /**
      * Create a DruidWebService.
