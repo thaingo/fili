@@ -2,12 +2,12 @@
 // Licensed under the terms of the Apache license. Please see LICENSE.md file distributed with this work for terms.
 package com.yahoo.bard.webservice.web.apirequest;
 
-import static com.yahoo.bard.webservice.web.DataApiRequest.DATE_TIME_STRING;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.DATE_TIME_SORT_VALUE_INVALID;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_DIRECTION_INVALID;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_NOT_IN_QUERY_FORMAT;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_NOT_SORTABLE_FORMAT;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.SORT_METRICS_UNDEFINED;
+import static com.yahoo.bard.webservice.web.apirequest.DataApiRequest.DATE_TIME_STRING;
 
 import com.yahoo.bard.webservice.data.metric.LogicalMetric;
 import com.yahoo.bard.webservice.data.metric.MetricDictionary;

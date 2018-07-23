@@ -2,10 +2,10 @@
 // Licensed under the terms of the Apache license. Please see LICENSE.md file distributed with this work for terms.
 package com.yahoo.bard.webservice.web.apirequest;
 
-import static com.yahoo.bard.webservice.web.DataApiRequest.DATE_TIME_STRING;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.INTEGER_INVALID;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TABLE_UNDEFINED;
 import static com.yahoo.bard.webservice.web.ErrorMessageFormat.TOP_N_UNSORTED;
+import static com.yahoo.bard.webservice.web.apirequest.DataApiRequest.DATE_TIME_STRING;
 import static com.yahoo.bard.webservice.web.apirequest.DefaultGranularityGenerators.generateGranularity;
 
 import com.yahoo.bard.webservice.config.SystemConfig;
@@ -17,17 +17,16 @@ import com.yahoo.bard.webservice.data.dimension.DimensionField;
 import com.yahoo.bard.webservice.data.filterbuilders.DruidFilterBuilder;
 import com.yahoo.bard.webservice.data.metric.LogicalMetric;
 import com.yahoo.bard.webservice.data.metric.MetricDictionary;
+import com.yahoo.bard.webservice.data.time.Granularity;
 import com.yahoo.bard.webservice.data.time.GranularityParser;
 import com.yahoo.bard.webservice.druid.model.having.Having;
 import com.yahoo.bard.webservice.druid.model.orderby.OrderByColumn;
 import com.yahoo.bard.webservice.druid.model.orderby.SortDirection;
-import com.yahoo.bard.webservice.druid.model.query.Granularity;
 import com.yahoo.bard.webservice.table.LogicalTable;
 import com.yahoo.bard.webservice.table.LogicalTableDictionary;
 import com.yahoo.bard.webservice.table.TableIdentifier;
 import com.yahoo.bard.webservice.web.ApiHaving;
 import com.yahoo.bard.webservice.web.BadApiRequestException;
-import com.yahoo.bard.webservice.web.DataApiRequest;
 import com.yahoo.bard.webservice.web.ResponseFormatType;
 import com.yahoo.bard.webservice.web.filters.ApiFilters;
 import com.yahoo.bard.webservice.web.util.PaginationParameters;
@@ -127,7 +126,7 @@ public class PojoDataApiRequestFactory implements DataApiRequestFactory {
 
     @Override
     @SuppressWarnings({"checkstyle:methodlength"})
-    public DataApiRequest buildDataApiRequestRequest(
+    public DataApiRequest buildDataApiRequest(
             DataApiRequestModel model,
             String asyncAfter,
             Optional<PaginationParameters> paginationParameters,

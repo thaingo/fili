@@ -1168,6 +1168,7 @@ public abstract class AbstractBinderFactory implements BinderFactory {
      * @param binder The HK2 Binder being initialized
      */
     public void loadAndBindConfigurations(AbstractBinder binder) {
+        // Extracted from main build binder to satisfy stylecheck rules on method length
         loader = getConfigurationLoader();
         loader.load();
 
@@ -1179,9 +1180,7 @@ public abstract class AbstractBinderFactory implements BinderFactory {
         binder.bind(loader.getDictionaries()).to(ResourceDictionaries.class);
 
         binder.bind(buildHavingGenerator(loader)).to(HavingGenerator.class);
-
     }
-
 
     /**
      * Create a DruidWebService.

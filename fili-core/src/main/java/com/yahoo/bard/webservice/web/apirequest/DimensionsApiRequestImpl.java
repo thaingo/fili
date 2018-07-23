@@ -84,7 +84,7 @@ public class DimensionsApiRequestImpl extends ApiRequestImpl implements Dimensio
                 this.dimensions,
                 this.filters,
                 this.format,
-                this.paginationParameters
+                this.paginationHelper.getPaginationParameters()
         );
     }
 
@@ -110,6 +110,31 @@ public class DimensionsApiRequestImpl extends ApiRequestImpl implements Dimensio
         this.dimensions = Sets.newLinkedHashSet(dimensions);
         this.filters = Sets.newLinkedHashSet(filters);
     }
+
+
+    /**
+     * All argument constructor, meant to be used for rewriting apiRequest.
+     *
+     * @param format  Format of the request
+     * @param paginationParameters  Pagination info for the request
+     * @param uriInfo  URI info
+     * @param builder  A response builder for the request
+     * @param dimensions  Desired dimensions of the request
+     * @param filters  Filters applied to the request
+     */
+    private DimensionsApiRequestImpl(
+            ResponseFormatType format,
+            PaginationParameters paginationParameters,
+            UriInfo uriInfo,
+            Response.ResponseBuilder builder,
+            Iterable<Dimension> dimensions,
+            Iterable<ApiFilter> filters
+    ) {
+        super(format, SYNCHRONOUS_ASYNC_AFTER_VALUE, paginationParameters, uriInfo, builder);
+        this.dimensions = Sets.newLinkedHashSet(dimensions);
+        this.filters = Sets.newLinkedHashSet(filters);
+    }
+
 
     /**
      * Returns a set of dimension names that contains either the requested dimension or all the available ones.
@@ -188,32 +213,32 @@ public class DimensionsApiRequestImpl extends ApiRequestImpl implements Dimensio
 
     @Override
     public DimensionsApiRequest withFormat(ResponseFormatType format) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override
     public DimensionsApiRequest withPaginationParameters(Optional<PaginationParameters> paginationParameters) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override
     public DimensionsApiRequest withUriInfo(UriInfo uriInfo) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override
     public DimensionsApiRequest withBuilder(Response.ResponseBuilder builder) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override
     public DimensionsApiRequest withDimensions(LinkedHashSet<Dimension> dimensions) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override
     public DimensionsApiRequest withFilters(Set<ApiFilter> filters) {
-        return new DimensionsApiRequestImpl(format, paginationParameters, uriInfo, builder, dimensions, filters);
+        return new DimensionsApiRequestImpl(format, getPaginationParameters(), uriInfo, builder, dimensions, filters);
     }
 
     @Override

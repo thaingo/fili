@@ -7,6 +7,7 @@ import static javax.ws.rs.core.Response.Status.OK
 import com.yahoo.bard.webservice.data.filterbuilders.DefaultDruidFilterBuilder
 import com.yahoo.bard.webservice.data.time.DefaultTimeGrain
 import com.yahoo.bard.webservice.web.apirequest.DataApiRequestImpl
+import com.yahoo.bard.webservice.web.filters.ApiFilters
 
 import javax.ws.rs.core.Response
 
@@ -24,7 +25,7 @@ class TestingDataApiRequestImpl extends DataApiRequestImpl {
                 null,
                 [] as Set,
                 [] as Set,
-                [:],
+                [:] as ApiFilters,
                 null,
                 null,
                 null,

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -134,6 +135,32 @@ public abstract class ApiRequestImpl implements ApiRequest {
     protected ApiRequestImpl(
             ResponseFormatType format,
             long asyncAfter,
+            Optional<PaginationParameters> paginationParameters,
+            UriInfo uriInfo,
+            Response.ResponseBuilder builder
+    ) {
+        this.format = format;
+        this.asyncAfter = asyncAfter;
+        this.paginationHelper = paginationParameters.map(paginationParameters1 -> new PaginationHelper(
+                uriInfo,
+                paginationParameters1
+        )).orElseGet(() -> new PaginationHelper(uriInfo));
+        this.uriInfo = uriInfo;
+        this.builder = builder;
+    }
+
+    /**
+     * All argument constructor, meant to be used for rewriting apiRequest.
+     *
+     * @param format  The format of the response
+     * @param asyncAfter  How long the user is willing to wait for a synchronous request, in milliseconds
+     * @param paginationParameters  The parameters used to describe pagination
+     * @param uriInfo  The uri details
+     * @param builder  The response builder for this request
+     */
+    protected ApiRequestImpl(
+            ResponseFormatType format,
+            long asyncAfter,
             PaginationParameters paginationParameters,
             UriInfo uriInfo,
             Response.ResponseBuilder builder
@@ -144,7 +171,6 @@ public abstract class ApiRequestImpl implements ApiRequest {
         this.uriInfo = uriInfo;
         this.builder = builder;
     }
-
 
     @Override
     public ResponseFormatType getFormat() {

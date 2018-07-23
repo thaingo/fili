@@ -32,7 +32,7 @@ import java.util.Set;
 public class DefaultFilterGenerator {
 
     protected static final String COMMA_AFTER_BRACKET_PATTERN = "(?<=]),";
-    private static final Logger LOG = LoggerFactory.getLogger(DimensionsApiRequestImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultFilterGenerator.class);
 
     /**
      * Generates filter objects on the based on the filter query in the api request.

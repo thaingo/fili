@@ -40,16 +40,14 @@ public class PaginationRequestHandler implements DataRequestHandler {
             throw new IllegalStateException("Pagination request handler requires a mapping response.");
         }
         MappingResponseProcessor mappingResponse = (MappingResponseProcessor) response;
-        if (request.getPaginationParameters().isPresent()) {
-            PaginationParameters paginationParameters = request.getPaginationParameters().get();
-            mappingResponse.getMappers().add(
-                    new PaginationMapper(
-                            paginationParameters,
-                            mappingResponse,
-                            request.getUriInfo().getRequestUriBuilder()
-                    )
-            );
-        }
+        PaginationParameters paginationParameters = request.getPaginationParameters();
+        mappingResponse.getMappers().add(
+                new PaginationMapper(
+                        paginationParameters,
+                        mappingResponse,
+                        request.getUriInfo().getRequestUriBuilder()
+                )
+        );
         return next.handleRequest(context, request, druidQuery, mappingResponse);
     }
 }

@@ -19,7 +19,6 @@ import com.yahoo.bard.webservice.logging.RequestLog;
 import com.yahoo.bard.webservice.logging.TimedPhase;
 import com.yahoo.bard.webservice.table.LogicalTable;
 import com.yahoo.bard.webservice.web.BadApiRequestException;
-import com.yahoo.bard.webservice.web.DataApiRequest;
 import com.yahoo.bard.webservice.web.ErrorMessageFormat;
 import com.yahoo.bard.webservice.web.MetricParser;
 

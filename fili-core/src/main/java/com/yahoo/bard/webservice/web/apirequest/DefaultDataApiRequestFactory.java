@@ -3,20 +3,19 @@
 package com.yahoo.bard.webservice.web.apirequest;
 
 import com.yahoo.bard.webservice.data.metric.MetricDictionary;
-import com.yahoo.bard.webservice.web.util.BardConfigResources;
 import com.yahoo.bard.webservice.web.util.PaginationParameters;
 
-import java.util.List;
+import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.PathSegment;
 
 /**
  * An implementation of DataApiRequestFactory that does not modify the initial parameters at all.
  */
 public class DefaultDataApiRequestFactory implements DataApiRequestFactory {
 
-    @Override
+    //@Override
+    /*
     public DataApiRequest buildApiRequest(
             String tableName,
             String granularity,
@@ -55,13 +54,13 @@ public class DefaultDataApiRequestFactory implements DataApiRequestFactory {
                 requestContext,
                 bardConfigResources
         );
-    }
+    }*/
 
     @Override
-    public DataApiRequest buildDataApiRequestRequest(
+    public DataApiRequest buildDataApiRequest(
             final DataApiRequestModel model,
             final String asyncAfter,
-            final PaginationParameters paginationParameters,
+            final Optional<PaginationParameters> paginationParameters,
             final ContainerRequestContext requestContext,
             final MetricDictionary dictionary
     ) {

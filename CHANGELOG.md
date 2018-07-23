@@ -7,7 +7,9 @@ pull request if there was one.
 
 ### Added:
 
-- [Created Injectable POJO DataApiRequest and StandardFactory]()
+- [Created Injectable POJO DataApiRequest and StandardFactory](https://github.com/yahoo/fili/issues/752)
+    * `DataApiRequestModel` to capture the huge list of web parameters describing the api request to Jersey.
+    * `DataApiRequestPojoImpl` an implementation of `DataApiRequest` using complete Dependency Injection
 
 - [An injection point for customizing the WebLoggingFilter to use during tests](https://github.com/yahoo/fili/pull/749)
     * Extend `JerseyTestBinder` and override `getLoggingFilter`.

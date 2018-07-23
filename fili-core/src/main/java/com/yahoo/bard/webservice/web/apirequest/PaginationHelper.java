@@ -42,14 +42,33 @@ public class PaginationHelper {
     private final UriInfo uriInfo;
     private final Response.ResponseBuilder builder;
 
+    /**
+     * Constructor.
+     * Uses the default Pagination.
+     *
+     * @param uriInfo  The uri info used to build pagination links
+     */
     public PaginationHelper(UriInfo uriInfo) {
         this(uriInfo, getDefaultPagination(), Response.status(Response.Status.OK));
     }
 
+    /**
+     * Constructor.
+     *
+     * @param uriInfo  The uri info used to build pagination links
+     * @param paginationParameters  parameters describing the pagination
+     */
     public PaginationHelper(UriInfo uriInfo, PaginationParameters paginationParameters) {
         this(uriInfo, paginationParameters, Response.status(Response.Status.OK));
     }
 
+    /**
+     * Constructor.
+     *
+     * @param uriInfo  The uri info used to build pagination links
+     * @param page  the page number of the desired result
+     * @param perPage  the number of records per page.
+     */
     public PaginationHelper(UriInfo uriInfo, String page, String perPage) {
         this(
                 uriInfo,
@@ -58,6 +77,14 @@ public class PaginationHelper {
         );
     }
 
+    /**
+     * Constructor.
+     *
+     * @param uriInfo  The uri info used to build pagination links
+     * @param page  the page number of the desired result
+     * @param perPage  the number of records per page.
+     * @param builder  A builder for a response (if not using a default one)
+     */
     public PaginationHelper(UriInfo uriInfo, String page, String perPage, Response.ResponseBuilder builder) {
         this(
                 uriInfo,
@@ -65,6 +92,24 @@ public class PaginationHelper {
                 builder
         );
     }
+
+    /**
+     * Constructor.
+     *
+     * @param uriInfo  The uri info used to build pagination links
+     * @param paginationParameters  parameters describing the pagination
+     * @param builder  A builder for a response (if not using a default one)
+     */
+    public PaginationHelper(
+            UriInfo uriInfo,
+            PaginationParameters paginationParameters,
+            Response.ResponseBuilder builder
+    ) {
+        this.uriInfo = uriInfo;
+        this.paginationParameters = paginationParameters == null ? paginationParameters : getDefaultPagination();
+        this.builder = builder;
+    }
+
     /**
      * Get the default pagination parameters for this type of API request.
      *
@@ -89,16 +134,12 @@ public class PaginationHelper {
         return data -> new AllPagesPagination<>(data, paginationParameters);
     }
 
-    public PaginationHelper(
-            UriInfo uriInfo,
-            PaginationParameters paginationParameters,
-            Response.ResponseBuilder builder
-    ) {
-        this.uriInfo = uriInfo;
-        this.paginationParameters = paginationParameters == null ? paginationParameters : getDefaultPagination();
-        this.builder = builder;
-    }
 
+    /**
+     * Getter.
+     *
+     * @return  The pagination parameters fueling this page helper.
+     */
     public PaginationParameters getPaginationParameters() {
         return paginationParameters;
     }

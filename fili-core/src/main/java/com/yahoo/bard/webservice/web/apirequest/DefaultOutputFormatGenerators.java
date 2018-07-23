@@ -7,7 +7,6 @@ import static com.yahoo.bard.webservice.web.ErrorMessageFormat.INVALID_ASYNC_AFT
 
 import com.yahoo.bard.webservice.config.SystemConfig;
 import com.yahoo.bard.webservice.config.SystemConfigProvider;
-import com.yahoo.bard.webservice.web.ApiRequest;
 import com.yahoo.bard.webservice.web.BadApiRequestException;
 import com.yahoo.bard.webservice.web.BadPaginationException;
 import com.yahoo.bard.webservice.web.ResponseFormatType;

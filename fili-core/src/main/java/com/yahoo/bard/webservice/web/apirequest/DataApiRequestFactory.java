@@ -41,7 +41,7 @@ public interface DataApiRequestFactory {
      *
      * @return  An api request with bound and valid domain objects.
      */
-    default DataApiRequest buildDataApiRequestRequest(
+    default DataApiRequest buildDataApiRequest(
             String tableName,
             String granularity,
             List<PathSegment> dimensions,
@@ -59,7 +59,7 @@ public interface DataApiRequestFactory {
             @NotNull String page,
             ContainerRequestContext requestContext,
             BardConfigResources bardConfigResources) {
-        return buildDataApiRequestRequest(
+        return buildDataApiRequest(
                 new DataApiRequestModel(
                         tableName,
                         granularity,
@@ -75,7 +75,7 @@ public interface DataApiRequestFactory {
                         timeZoneId
                 ),
                 asyncAfter,
-                DefaultOutputFormatGenerators.generatePaginationParameters(perPage, page),
+                Optional.of(DefaultOutputFormatGenerators.generatePaginationParameters(perPage, page)),
                 requestContext,
                 bardConfigResources.getMetricDictionary()
         );
@@ -92,7 +92,7 @@ public interface DataApiRequestFactory {
      *
      * @return  An api request with bound and valid domain objects.
      */
-    DataApiRequest buildDataApiRequestRequest(
+    DataApiRequest buildDataApiRequest(
             DataApiRequestModel model,
             String asyncAfter,
             Optional<PaginationParameters> paginationParameters,

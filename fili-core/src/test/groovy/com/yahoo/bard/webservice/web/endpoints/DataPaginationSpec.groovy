@@ -202,6 +202,8 @@ class DataPaginationSpec extends BaseDataServletComponentSpec {
         injectDruidResponse(druidResponse)
 
         when: "We send a request that returns fewer results than we want per page"
+        def foo = getQueryParams("$perPage", "1")
+
         Response response = makeAbstractRequest({getQueryParams("$perPage", "1")})
 
         then: "We get all the results in one page, and nothing else"

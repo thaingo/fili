@@ -170,6 +170,14 @@ import javax.ws.rs.core.UriInfo;
 
     DataApiRequest withFormat(ResponseFormatType format);
 
+    /**
+     * Wither to replace pagination parameters.
+     * An Optional empty will replace pagination parameters with the underlying default pagination parameters.
+     *
+     * @param paginationParameters  Optional of pagination parameters or empty to use the default.
+     *
+     * @return  A copy of this DataApiRequest with modified pagination parameters.
+     */
     DataApiRequest withPaginationParameters(Optional<PaginationParameters> paginationParameters);
 
     DataApiRequest withUriInfo(UriInfo uriInfo);

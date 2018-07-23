@@ -64,7 +64,7 @@ public class MetricsApiRequestImpl extends ApiRequestImpl implements MetricsApiR
                 "Api request: \nMetrics: {},\nFormat: {}\nPagination: {}",
                 this.metrics,
                 this.format,
-                this.paginationParameters
+                this.paginationHelper.getPaginationParameters()
         );
     }
 

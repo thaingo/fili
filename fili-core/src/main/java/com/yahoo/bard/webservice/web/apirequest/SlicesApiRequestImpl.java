@@ -86,7 +86,7 @@ public class SlicesApiRequestImpl extends ApiRequestImpl implements SlicesApiReq
                 "Api request: \nSlices: {},\nFormat: {}\nPagination: {}",
                 this.slices,
                 this.format,
-                this.paginationParameters
+                this.paginationHelper.getPaginationParameters()
         );
     }
 
