@@ -177,7 +177,7 @@ class ApiRequestSpec extends Specification {
         )
 
         expect:
-        TestingDataApiRequestImpl.validateTimeAlignment(DAY, intervals)
+        ApiRequestValidators.validateTimeAlignment(DAY, intervals)
 
         where:
         intervalString          | zone

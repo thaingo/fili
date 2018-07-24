@@ -150,8 +150,8 @@ public class Utils {
      * @param mapper  The object mapper that creates and empty node.
      */
     public static void omitField(JsonNode node, String fieldName, ObjectMapper mapper) {
-        if (node.has("context")) {
-            ((ObjectNode) node).replace(fieldName, mapper.createObjectNode());
+        if (node.has(fieldName)) {
+            ((ObjectNode) node).remove(fieldName);
         }
 
         for (JsonNode child : node) {

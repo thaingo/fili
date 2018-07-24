@@ -63,6 +63,7 @@ public abstract class ApiRequestImpl implements ApiRequest {
 
     protected final ResponseFormatType format;
     PaginationHelper paginationHelper;
+
     protected final UriInfo uriInfo;
     protected final Response.ResponseBuilder builder;
     protected Pagination<?> pagination;

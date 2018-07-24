@@ -7,9 +7,10 @@ import static javax.ws.rs.core.Response.Status.OK
 import com.yahoo.bard.webservice.web.apirequest.ApiRequestImpl
 
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.UriInfo
 
 class TestingApiRequestImpl extends ApiRequestImpl {
     TestingApiRequestImpl() {
-        super(null, Long.MAX_VALUE, null, null, Response.status(OK))
+        super(null, Long.MAX_VALUE, Optional.empty(), (UriInfo) null, Response.status(OK))
     }
 }

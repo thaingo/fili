@@ -85,7 +85,7 @@ class AggregatabilityValidationSpec extends Specification {
         Map<Dimension, Set<ApiFilter>> filters = apiRequest.generateFilters(filterString, table, dimensionDict)
 
         when:
-        apiRequest.validateAggregatability(dims, filters)
+        ApiRequestValidators.validateAggregatability(dims, filters)
 
         then:
         notThrown BadApiRequestException

@@ -37,6 +37,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -157,10 +158,13 @@ public class PojoDataApiRequestFactory implements DataApiRequestFactory {
                 dateTimeFormatter
         );
 
-        // At least one logical metric is required
+        MetricDictionary localMetricDictionary = metricDictionary.getScope(Collections.singletonList(model
+                .getTableName()));
+
+                // At least one logical metric is required
         Set<LogicalMetric> logicalMetrics = DefaultLogicalMetricsGenerators.generateLogicalMetrics(
                 model.getMetrics(),
-                metricDictionary,
+                localMetricDictionary,
                 dimensionDictionary,
                 table,
                 druidFilterBuilder

@@ -81,11 +81,11 @@ public class PaginationHelper {
      * Constructor.
      *
      * @param uriInfo  The uri info used to build pagination links
-     * @param page  the page number of the desired result
      * @param perPage  the number of records per page.
+     * @param page  the page number of the desired result
      * @param builder  A builder for a response (if not using a default one)
      */
-    public PaginationHelper(UriInfo uriInfo, String page, String perPage, Response.ResponseBuilder builder) {
+    public PaginationHelper(UriInfo uriInfo, String perPage, String page, Response.ResponseBuilder builder) {
         this(
                 uriInfo,
                 DefaultOutputFormatGenerators.generatePaginationParameters(perPage, page),
@@ -106,7 +106,7 @@ public class PaginationHelper {
             Response.ResponseBuilder builder
     ) {
         this.uriInfo = uriInfo;
-        this.paginationParameters = paginationParameters == null ? paginationParameters : getDefaultPagination();
+        this.paginationParameters = paginationParameters != null ? paginationParameters : getDefaultPagination();
         this.builder = builder;
     }
 

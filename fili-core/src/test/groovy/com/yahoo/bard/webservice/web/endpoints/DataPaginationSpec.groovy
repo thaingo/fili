@@ -158,7 +158,7 @@ class DataPaginationSpec extends BaseDataServletComponentSpec {
 
         then:
         headersAreCorrect(response.getHeaders(), ROWS_PER_PAGE, page, numPages, true)
-        GroovyTestUtils.compareJson(response.readEntity(String), apiResponse)
+        GroovyTestUtils.compareJson(response.readEntity(String), apiResponse, [])
 
         where:
         rowsPerPage = ROWS_PER_PAGE
@@ -208,7 +208,7 @@ class DataPaginationSpec extends BaseDataServletComponentSpec {
 
         then: "We get all the results in one page, and nothing else"
         headersAreCorrect(response.getHeaders(), perPage, 1, 1, true)
-        GroovyTestUtils.compareJson(response.readEntity(String), apiResponse)
+        GroovyTestUtils.compareJson(response.readEntity(String), apiResponse, [])
 
         where:
         perPage = NUM_ALL_RESULTS + 5

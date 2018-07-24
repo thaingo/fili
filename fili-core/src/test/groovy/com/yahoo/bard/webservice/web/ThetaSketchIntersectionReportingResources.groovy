@@ -22,6 +22,7 @@ import com.yahoo.bard.webservice.data.dimension.DimensionField
 import com.yahoo.bard.webservice.data.dimension.MapStoreManager
 import com.yahoo.bard.webservice.data.dimension.impl.KeyValueStoreDimension
 import com.yahoo.bard.webservice.data.dimension.impl.ScanSearchProviderManager
+import com.yahoo.bard.webservice.data.filterbuilders.DefaultDruidFilterBuilder
 import com.yahoo.bard.webservice.data.metric.LogicalMetric
 import com.yahoo.bard.webservice.data.metric.LogicalMetricColumn
 import com.yahoo.bard.webservice.data.metric.MetricColumn
@@ -42,15 +43,12 @@ import com.yahoo.bard.webservice.table.LogicalTable
 import com.yahoo.bard.webservice.table.PhysicalTable
 import com.yahoo.bard.webservice.table.StrictPhysicalTable
 import com.yahoo.bard.webservice.table.TableGroup
-import com.yahoo.bard.webservice.web.apirequest.DataApiRequestImpl
-import com.yahoo.bard.webservice.web.apirequest.utils.TestingDataApiRequestImpl
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 
 import spock.lang.Specification
-
 /**
  * This class is a resource container for intersection report tests.
  */
@@ -190,7 +188,7 @@ class ThetaSketchIntersectionReportingResources extends Specification {
                 fooNoBarAggregation,
                 dimensionDict,
                 table,
-                new TestingDataApiRequestImpl()
+                new DefaultDruidFilterBuilder()
         )
         fooNoBarPostAggregationInterim = ThetaSketchSetOperationHelper.makePostAggFromAgg(
                 SketchSetOperationPostAggFunction.INTERSECT,
@@ -203,7 +201,7 @@ class ThetaSketchIntersectionReportingResources extends Specification {
                 regFoosAggregation,
                 dimensionDict,
                 table,
-                new TestingDataApiRequestImpl()
+                new DefaultDruidFilterBuilder()
         )
         fooRegFoosPostAggregationInterim = ThetaSketchSetOperationHelper.makePostAggFromAgg(
                 SketchSetOperationPostAggFunction.INTERSECT,

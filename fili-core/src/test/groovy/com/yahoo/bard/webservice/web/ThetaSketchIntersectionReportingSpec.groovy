@@ -5,6 +5,7 @@ package com.yahoo.bard.webservice.web
 import static com.yahoo.bard.webservice.config.BardFeatureFlag.INTERSECTION_REPORTING
 
 import com.yahoo.bard.webservice.data.dimension.Dimension
+import com.yahoo.bard.webservice.data.filterbuilders.DefaultDruidFilterBuilder
 import com.yahoo.bard.webservice.data.metric.LogicalMetric
 import com.yahoo.bard.webservice.data.metric.TemplateDruidQuery
 import com.yahoo.bard.webservice.druid.model.aggregation.Aggregation
@@ -128,7 +129,7 @@ class ThetaSketchIntersectionReportingSpec extends Specification {
                 resources.filterObj,
                 resources.dimensionDict,
                 resources.table,
-                new TestingDataApiRequestImpl()
+                new DefaultDruidFilterBuilder()
         )
 
         expect:
@@ -142,7 +143,7 @@ class ThetaSketchIntersectionReportingSpec extends Specification {
                 resources.filterObj,
                 resources.dimensionDict,
                 resources.table,
-                new TestingDataApiRequestImpl()
+                new DefaultDruidFilterBuilder()
         )
 
         Set<Aggregation> aggregations = templateDruidQuery.aggregations;
